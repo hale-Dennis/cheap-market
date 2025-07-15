@@ -1,0 +1,15 @@
+application:
+  security:
+    admin:
+      username: ${ADMIN_USERNAME:admin@default.com}
+      password: ${ADMIN_PASSWORD:defaultpassword}
+    jwt:
+      secret-key: ${JWT_SECRET}
+      expiration: 3600000
+spring:
+  application:
+    name: api
+  datasource:
+    url: jdbc:postgresql://localhost:5432/user_db
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
