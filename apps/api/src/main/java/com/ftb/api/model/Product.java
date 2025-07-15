@@ -1,22 +1,21 @@
 package com.ftb.api.model;
 
 
-import io.hypersistence.utils.hibernate.type.array.ListArrayType;
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.Type;
-import org.hibernate.annotations.UpdateTimestamp;
-
-
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
+import lombok.Builder;
 import java.util.List;
 import java.util.UUID;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.math.BigDecimal;
+import jakarta.persistence.*;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import org.hibernate.annotations.Type;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.CreationTimestamp;
+import io.hypersistence.utils.hibernate.type.array.ListArrayType;
+
 
 @Data
 @Builder

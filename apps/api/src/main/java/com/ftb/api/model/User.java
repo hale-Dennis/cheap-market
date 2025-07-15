@@ -40,7 +40,7 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private com.ftb.api.model.UserRole role;
+    private UserRole role;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
