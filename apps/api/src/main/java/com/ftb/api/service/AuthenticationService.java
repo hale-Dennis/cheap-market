@@ -1,16 +1,16 @@
 package com.ftb.api.service;
 
+import java.util.Collections;
+import lombok.RequiredArgsConstructor;
 import com.ftb.api.dto.request.LoginRequest;
 import com.ftb.api.dto.response.JwtResponse;
-import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Service;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.authentication.BadCredentialsException;
 
-import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor

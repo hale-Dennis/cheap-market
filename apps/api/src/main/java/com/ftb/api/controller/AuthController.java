@@ -1,16 +1,17 @@
 package com.ftb.api.controller;
 
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import com.ftb.api.dto.request.LoginRequest;
 import com.ftb.api.dto.response.ApiResponse;
 import com.ftb.api.dto.response.JwtResponse;
-import com.ftb.api.service.AuthenticationService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import com.ftb.api.service.AuthenticationService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 
 @RestController
 @RequestMapping("/api/v1/auth")
