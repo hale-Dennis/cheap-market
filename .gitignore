@@ -1,0 +1,94 @@
+# -------------------------------------
+# Java & Maven/Gradle
+# -------------------------------------
+
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package files
+*.jar
+*.war
+*.ear
+
+# Virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+# -------------------------------------
+# Maven
+# -------------------------------------
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# -------------------------------------
+# Gradle
+# -------------------------------------
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Build output
+bin/
+out/
+
+# -------------------------------------
+# IntelliJ / JetBrains IDE
+# -------------------------------------
+*.iml
+.idea/
+*.iws
+*.ipr
+
+# IDE settings
+.vscode/
+*.swp
+*.swo
+
+# -------------------------------------
+# OS and Miscellaneous
+# -------------------------------------
+.DS_Store
+Thumbs.db
+*.bak
+*.tmp
+*.orig
+*.rej
+
+# -------------------------------------
+# Spring Boot
+# -------------------------------------
+# Ignore embedded H2 database files
+*.h2.db
+
+# Local env files and config overrides
+.env
+*.env
+
+# -------------------------------------
+# Git
+# -------------------------------------
+*.patch
+*.diff
+
+# -------------------------------------
+# Docker
+# -------------------------------------
+*.pid
+docker-compose.override.yml
+
+
+.bmad-core/
+.cursor/
+web-bundles/
