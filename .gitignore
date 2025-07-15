@@ -92,3 +92,4 @@ docker-compose.override.yml
 .bmad-core/
 .cursor/
 web-bundles/
+node_modules/

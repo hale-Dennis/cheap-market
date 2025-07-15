@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: cheap-market-web
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: apps/web/.next
+    plan: free
+  - type: web
+    name: cheap-market-api
+    env: docker
+    dockerfilePath: apps/api/Dockerfile
+    plan: free 
