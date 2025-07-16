@@ -1,0 +1,62 @@
+package com.ftb.api.controller.admin;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import com.ftb.api.service.FarmerService;
+import org.springframework.http.HttpStatus;
+import com.ftb.api.dto.response.ApiResponse;
+import org.springframework.http.ResponseEntity;
+import com.ftb.api.dto.response.FarmerResponse;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.*;
+import com.ftb.api.dto.response.PaginatedResponse;
+import com.ftb.api.dto.request.CreateFarmerRequest;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.security.access.prepost.PreAuthorize;
+
+
+@RestController
+@RequestMapping("/api/v1/admin/farmers")
+@RequiredArgsConstructor
+public class FarmerController {
+
+    private final FarmerService farmerService;
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<FarmerResponse>> createFarmer(@Valid @RequestBody CreateFarmerRequest request) {
+
+        FarmerResponse farmerResponse = farmerService.createFarmer(request);
+
+        ApiResponse<FarmerResponse> response = ApiResponse.<FarmerResponse>builder()
+                .status(HttpStatus.CREATED.value())
+                .message("Farmer account created successfully.")
+                .data(farmerResponse)
+                .build();
+
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    /**
+     * Retrieves a paginated list of all registered farmers.
+     * Accessible only by users with the 'ADMIN' role.
+     * @param pageable Automatically populated by Spring from request params (?page, ?size, ?sort).
+     * @return A ResponseEntity containing the paginated list of farmers.
+     */
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<PaginatedResponse<FarmerResponse>>> getAllFarmers(
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+
+        PaginatedResponse<FarmerResponse> paginatedResponse = farmerService.getAllFarmers(pageable);
+
+        ApiResponse<PaginatedResponse<FarmerResponse>> response = ApiResponse.<PaginatedResponse<FarmerResponse>>builder()
+                .status(HttpStatus.OK.value())
+                .message("Successfully retrieved farmer list.")
+                .data(paginatedResponse)
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+}
