@@ -1,12 +1,14 @@
 package com.ftb.api.repository;
 
-import java.util.Optional;
 import java.util.UUID;
+import java.util.Optional;
 import com.ftb.api.model.User;
 import com.ftb.api.model.UserRole;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 
@@ -46,4 +48,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @return An Optional containing the User if found.
      */
     Optional<User> findByEmail(String email);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<User> findById(UUID id);
 }
