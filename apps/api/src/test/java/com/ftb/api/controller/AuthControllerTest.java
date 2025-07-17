@@ -1,5 +1,6 @@
 package com.ftb.api.controller;
 
+import com.ftb.api.dto.request.RegisterRequest;
 import org.mockito.Mock;
 import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.when;
@@ -70,5 +71,31 @@ class AuthControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.message").value("Invalid email or password"));
+    }
+
+    @Test
+    void register_ValidRequest_ShouldReturn201Created() throws Exception {
+        // Given
+        RegisterRequest request = new RegisterRequest("New Buyer", "buyer@test.com", "Password123", "Test Region");
+        when(authenticationService.registerBuyer(any())).thenReturn(new JwtResponse("new.jwt.token"));
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.token").value("new.jwt.token"));
+    }
+
+    @Test
+    void register_WeakPassword_ShouldReturn400BadRequest() throws Exception {
+        // Given
+        RegisterRequest request = new RegisterRequest("New Buyer", "buyer@test.com", "weak", "Test Region");
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 }
