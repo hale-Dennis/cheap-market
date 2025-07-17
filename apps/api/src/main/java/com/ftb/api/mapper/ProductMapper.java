@@ -1,9 +1,12 @@
 package com.ftb.api.mapper;
 
 import com.ftb.api.dto.request.CreateProductRequest;
+import com.ftb.api.dto.response.FarmerInfo;
 import com.ftb.api.dto.response.ProductCardResponse;
+import com.ftb.api.dto.response.ProductDetailResponse;
 import com.ftb.api.dto.response.ProductResponse;
 import com.ftb.api.model.Product;
+import com.ftb.api.model.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -27,4 +30,9 @@ public interface ProductMapper {
         }
         return imageUrls.getFirst();
     }
+
+    @Mapping(source = "farmer", target = "farmer")
+    ProductDetailResponse toProductDetailResponse(Product product);
+
+    FarmerInfo toFarmerInfo(User farmer);
 }

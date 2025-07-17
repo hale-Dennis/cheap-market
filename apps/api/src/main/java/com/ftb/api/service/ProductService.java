@@ -3,6 +3,7 @@ package com.ftb.api.service;
 import com.ftb.api.dto.request.CreateProductRequest;
 import com.ftb.api.dto.response.PaginatedResponse;
 import com.ftb.api.dto.response.ProductCardResponse;
+import com.ftb.api.dto.response.ProductDetailResponse;
 import com.ftb.api.dto.response.ProductResponse;
 import com.ftb.api.exception.ResourceNotFoundException;
 import com.ftb.api.mapper.ProductMapper;
@@ -77,5 +78,14 @@ public class ProductService {
                 .size(productPage.getSize())
                 .build();
 
+    }
+
+    @Transactional(readOnly = true)
+    public ProductDetailResponse getPublicProductById(UUID productId) {
+
+        Product product = productRepository.findById(productId)
+                .filter(p -> p.getListingStatus() == ProductStatus.ACTIVE)
+                .orElseThrow(() -> new ResourceNotFoundException("Active product not found with id: " + productId));
+        return productMapper.toProductDetailResponse(product);
     }
 }
