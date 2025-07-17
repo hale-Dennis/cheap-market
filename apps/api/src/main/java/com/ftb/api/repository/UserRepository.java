@@ -1,5 +1,6 @@
 package com.ftb.api.repository;
 
+import java.util.Optional;
 import java.util.UUID;
 import com.ftb.api.model.User;
 import com.ftb.api.model.UserRole;
@@ -38,4 +39,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @return A Page object containing the users for the requested page.
      */
     Page<User> findByRole(UserRole role, Pageable pageable);
+
+    /**
+     * Finds a user by their email address.
+     * @param email The email to search for.
+     * @return An Optional containing the User if found.
+     */
+    Optional<User> findByEmail(String email);
 }
