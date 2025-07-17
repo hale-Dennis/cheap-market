@@ -1,0 +1,53 @@
+package com.ftb.api.controller;
+
+import com.ftb.api.dto.request.PlaceOrderRequest;
+import com.ftb.api.dto.response.ApiResponse;
+import com.ftb.api.dto.response.OrderConfirmationResponse;
+import com.ftb.api.dto.response.PlaceOrderResponseDto;
+import com.ftb.api.service.OrderService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/v1/orders")
+@PreAuthorize("hasRole('BUYER')")
+@RequiredArgsConstructor
+public class OrderController {
+
+    private final OrderService orderService;
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<PlaceOrderResponseDto>> placeOrder(
+            Authentication authentication,
+            @Valid @RequestBody PlaceOrderRequest request
+    ) {
+        UUID newOrderId = orderService.placeOrder(authentication.getName(), request);
+        ApiResponse<PlaceOrderResponseDto> response = ApiResponse.<PlaceOrderResponseDto>builder()
+                .status(HttpStatus.CREATED.value())
+                .message("Order placed successfully.")
+                .data(new PlaceOrderResponseDto(newOrderId))
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{orderId}")
+    public ResponseEntity<ApiResponse<OrderConfirmationResponse>> getOrderConfirmation(
+            Authentication authentication,
+            @PathVariable UUID orderId
+    ) {
+        OrderConfirmationResponse orderDetails = orderService.getOrderConfirmation(orderId, authentication.getName());
+        ApiResponse<OrderConfirmationResponse> response = ApiResponse.<OrderConfirmationResponse>builder()
+                .status(HttpStatus.OK.value())
+                .message("Order details retrieved successfully.")
+                .data(orderDetails)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+}
