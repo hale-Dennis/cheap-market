@@ -17,8 +17,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import com.ftb.api.dto.response.OrderSummaryResponseDto;
+import com.ftb.api.dto.response.PaginatedResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 
 @Service
 @RequiredArgsConstructor
@@ -94,5 +100,28 @@ public class OrderService {
         }
 
         return orderMapper.toOrderConfirmationResponse(order);
+    }
+
+    @Transactional(readOnly = true)
+    public PaginatedResponse<OrderSummaryResponseDto> getOrdersForBuyer(String buyerEmail, Pageable pageable) {
+
+        User buyer = userRepository.findByEmail(buyerEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + buyerEmail));
+
+
+        Page<Order> orderPage = orderRepository.findByBuyerId(buyer.getId(), pageable);
+
+
+        List<OrderSummaryResponseDto> orderSummaries = orderPage.getContent().stream()
+                .map(orderMapper::toOrderSummaryResponseDto)
+                .collect(Collectors.toList());
+
+        return PaginatedResponse.<OrderSummaryResponseDto>builder()
+                .content(orderSummaries)
+                .currentPage(orderPage.getNumber())
+                .totalPages(orderPage.getTotalPages())
+                .totalElements(orderPage.getTotalElements())
+                .size(orderPage.getSize())
+                .build();
     }
 }

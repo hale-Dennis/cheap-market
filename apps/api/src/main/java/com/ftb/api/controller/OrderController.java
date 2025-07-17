@@ -1,12 +1,13 @@
 package com.ftb.api.controller;
 
 import com.ftb.api.dto.request.PlaceOrderRequest;
-import com.ftb.api.dto.response.ApiResponse;
-import com.ftb.api.dto.response.OrderConfirmationResponse;
-import com.ftb.api.dto.response.PlaceOrderResponseDto;
+import com.ftb.api.dto.response.*;
 import com.ftb.api.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -47,6 +48,20 @@ public class OrderController {
                 .status(HttpStatus.OK.value())
                 .message("Order details retrieved successfully.")
                 .data(orderDetails)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<PaginatedResponse<OrderSummaryResponseDto>>> listBuyerOrders(
+            Authentication authentication,
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        PaginatedResponse<OrderSummaryResponseDto> orders = orderService.getOrdersForBuyer(authentication.getName(), pageable);
+        ApiResponse<PaginatedResponse<OrderSummaryResponseDto>> response = ApiResponse.<PaginatedResponse<OrderSummaryResponseDto>>builder()
+                .status(200)
+                .message("Order history retrieved successfully.")
+                .data(orders)
                 .build();
         return ResponseEntity.ok(response);
     }
