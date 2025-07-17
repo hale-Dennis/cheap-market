@@ -38,9 +38,23 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleConflictException(ConflictException ex) {
         ApiResponse<Object> response = ApiResponse.builder()
                 .status(HttpStatus.CONFLICT.value())
-                .message(ex.getMessage()) // Use the specific message from the exception
+                .message(ex.getMessage())
                 .build();
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
+    /**
+     * Handles exceptions for resources that could not be found.
+     * @param ex The caught ResourceNotFoundException.
+     * @return A ResponseEntity with a 404 Not Found status and a clear error message.
+     */
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        ApiResponse<Object> response = ApiResponse.builder()
+                .status(HttpStatus.NOT_FOUND.value())
+                .message(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(Exception.class)
