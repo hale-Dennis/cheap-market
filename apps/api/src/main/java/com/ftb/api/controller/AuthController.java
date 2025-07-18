@@ -28,7 +28,7 @@ public class AuthController {
 
         ApiResponse<JwtResponse> response = ApiResponse.<JwtResponse>builder()
                 .status(200)
-                .message("Admin login successful")
+                .message("Login successful")
                 .data(jwtResponse)
                 .build();
 
