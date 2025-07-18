@@ -1,15 +1,16 @@
 package com.ftb.api.controller;
 
-import com.ftb.api.dto.request.UpdateBuyerProfileRequest;
-import com.ftb.api.dto.response.ApiResponse;
-import com.ftb.api.dto.response.BuyerProfileResponse;
-import com.ftb.api.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import com.ftb.api.service.UserService;
+import com.ftb.api.dto.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import com.ftb.api.dto.response.BuyerProfileResponse;
+import org.springframework.security.core.Authentication;
+import com.ftb.api.dto.request.UpdateBuyerProfileRequest;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 
 @RestController
 @RequestMapping("/api/v1/buyer")
