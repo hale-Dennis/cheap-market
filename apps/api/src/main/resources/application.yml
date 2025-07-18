@@ -10,6 +10,19 @@ spring:
   application:
     name: api
   datasource:
-    url: jdbc:postgresql://localhost:5432/user_db
+    url: jdbc:postgresql://localhost:5432/cheap_market
     username: ${DB_USER}
     password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+
+logging:
+  level:
+    org.springframework.security: TRACE

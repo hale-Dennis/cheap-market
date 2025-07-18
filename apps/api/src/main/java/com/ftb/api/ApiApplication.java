@@ -5,7 +5,7 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.ftb.api")
 @EnableCaching
 public class ApiApplication {
 

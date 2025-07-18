@@ -1,6 +1,9 @@
 package com.ftb.api.exception;
 
 import java.util.stream.Collectors;
+
+import jakarta.validation.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import com.ftb.api.dto.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
@@ -55,6 +58,28 @@ public class GlobalExceptionHandler {
                 .message(ex.getMessage())
                 .build();
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleConstraintViolationException(ConstraintViolationException ex) {
+        String errors = ex.getConstraintViolations().stream()
+                .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
+                .collect(Collectors.joining(", "));
+
+        ApiResponse<Object> response = ApiResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .message("Validation failed: " + errors)
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        ApiResponse<Object> response = ApiResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .message("Database constraint violation: " + ex.getMostSpecificCause().getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)

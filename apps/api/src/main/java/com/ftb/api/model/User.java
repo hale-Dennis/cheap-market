@@ -32,7 +32,7 @@ public class User {
     @Column(nullable = false)
     private String passwordHash;
 
-    @Column(nullable = false)
+    @Column()
     private String phoneNumber;
 
     @Column(nullable = false)
