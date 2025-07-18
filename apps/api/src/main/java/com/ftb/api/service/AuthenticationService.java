@@ -47,15 +47,13 @@ public class AuthenticationService {
     }
 
     public JwtResponse registerBuyer(RegisterRequest request) {
-        // 1. Check for duplicate email before creation
+
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new ConflictException("A user with this email already exists.");
         }
 
-        // 2. Delegate user creation to the UserService
         com.ftb.api.model.User newUser = userService.createUser(request, UserRole.BUYER);
 
-        // 3. Generate JWT for the new user to facilitate auto-login
         UserDetails userDetails = new org.springframework.security.core.userdetails.User(
                 newUser.getEmail(),
                 newUser.getPasswordHash(),
