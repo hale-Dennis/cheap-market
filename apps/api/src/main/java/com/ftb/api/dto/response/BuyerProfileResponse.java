@@ -1,10 +1,11 @@
 package com.ftb.api.dto.response;
 
+import lombok.Data;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 import com.ftb.api.model.Address;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+
 
 @Data
 @Builder

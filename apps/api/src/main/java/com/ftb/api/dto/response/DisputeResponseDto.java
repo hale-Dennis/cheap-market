@@ -1,11 +1,11 @@
 package com.ftb.api.dto.response;
 
-import com.ftb.api.model.DisputeStatus;
-import lombok.Builder;
 import lombok.Data;
-
-import java.time.Instant;
 import java.util.UUID;
+import lombok.Builder;
+import java.time.Instant;
+import com.ftb.api.model.DisputeStatus;
+
 
 @Data
 @Builder

@@ -1,15 +1,14 @@
 package com.ftb.api.dto.response;
 
-
-import com.ftb.api.model.ProductStatus;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.time.Instant;
+import lombok.Builder;
 import java.util.List;
 import java.util.UUID;
+import java.time.Instant;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import com.ftb.api.model.ProductStatus;
+
 
 @Data
 @Builder

@@ -1,10 +1,10 @@
 package com.ftb.api.dto.request;
 
+import lombok.Data;
+import java.util.UUID;
 import com.ftb.api.model.FulfillmentType;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
 
-import java.util.UUID;
 
 @Data
 public class PlaceOrderRequest {

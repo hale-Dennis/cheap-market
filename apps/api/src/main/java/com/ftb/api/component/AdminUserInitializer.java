@@ -1,15 +1,16 @@
 package com.ftb.api.component;
 
 import com.ftb.api.model.User;
-import com.ftb.api.model.AccountStatus;
-import com.ftb.api.model.UserRole;
-import com.ftb.api.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import com.ftb.api.model.UserRole;
+import lombok.RequiredArgsConstructor;
+import com.ftb.api.model.AccountStatus;
+import com.ftb.api.repository.UserRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 
 @Component
 @RequiredArgsConstructor
@@ -28,7 +29,7 @@ public class AdminUserInitializer implements CommandLineRunner {
     private String adminPassword;
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         if (!userRepository.existsByEmail(adminUsername)) {
             User adminUser = User.builder()
                     .fullName("System Admin")

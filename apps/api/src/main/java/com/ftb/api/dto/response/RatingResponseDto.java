@@ -1,10 +1,10 @@
 package com.ftb.api.dto.response;
 
-import lombok.Builder;
 import lombok.Data;
-
-import java.time.Instant;
+import lombok.Builder;
 import java.util.UUID;
+import java.time.Instant;
+
 
 @Data
 @Builder

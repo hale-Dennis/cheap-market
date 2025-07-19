@@ -1,12 +1,12 @@
 package com.ftb.api.dto.response;
 
-import com.ftb.api.model.OrderStatus;
-import lombok.Builder;
 import lombok.Data;
-
-import java.math.BigDecimal;
-import java.time.Instant;
+import lombok.Builder;
 import java.util.UUID;
+import java.time.Instant;
+import java.math.BigDecimal;
+import com.ftb.api.model.OrderStatus;
+
 
 @Data
 @Builder

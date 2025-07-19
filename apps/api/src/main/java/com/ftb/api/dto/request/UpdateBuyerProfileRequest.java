@@ -1,11 +1,12 @@
 package com.ftb.api.dto.request;
 
-import com.ftb.api.model.Address;
-import jakarta.validation.Valid;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.Builder;
+import jakarta.validation.Valid;
 import lombok.NoArgsConstructor;
+import com.ftb.api.model.Address;
+import lombok.AllArgsConstructor;
+
 
 @Data
 @Builder

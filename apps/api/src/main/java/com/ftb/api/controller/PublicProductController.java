@@ -1,18 +1,18 @@
 package com.ftb.api.controller;
 
+import java.util.UUID;
+import java.util.Optional;
+import lombok.RequiredArgsConstructor;
+import com.ftb.api.service.ProductService;
 import com.ftb.api.dto.response.ApiResponse;
+import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.*;
 import com.ftb.api.dto.response.PaginatedResponse;
+import org.springframework.data.web.PageableDefault;
 import com.ftb.api.dto.response.ProductCardResponse;
 import com.ftb.api.dto.response.ProductDetailResponse;
-import com.ftb.api.service.ProductService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/products")

@@ -1,9 +1,9 @@
 package com.ftb.api.dto.response;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-
 import java.util.UUID;
+import lombok.AllArgsConstructor;
+
 
 @Data
 @AllArgsConstructor
