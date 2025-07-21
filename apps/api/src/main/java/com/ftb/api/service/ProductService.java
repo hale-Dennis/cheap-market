@@ -1,30 +1,30 @@
 package com.ftb.api.service;
 
-import com.ftb.api.dto.request.CreateProductRequest;
-import com.ftb.api.dto.response.PaginatedResponse;
-import com.ftb.api.dto.response.ProductCardResponse;
-import com.ftb.api.dto.response.ProductDetailResponse;
-import com.ftb.api.dto.response.ProductResponse;
-import com.ftb.api.exception.ResourceNotFoundException;
-import com.ftb.api.mapper.ProductMapper;
-import com.ftb.api.model.Category;
-import com.ftb.api.model.Product;
-import com.ftb.api.model.ProductStatus;
-import com.ftb.api.model.User;
-import com.ftb.api.repository.CategoryRepository;
-import com.ftb.api.repository.ProductRepository;
-import com.ftb.api.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import com.ftb.api.repository.specification.ProductSpecification;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
+import java.util.UUID;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
+import com.ftb.api.model.User;
+import com.ftb.api.model.Product;
+import com.ftb.api.model.Category;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import com.ftb.api.model.ProductStatus;
+import com.ftb.api.mapper.ProductMapper;
+import org.springframework.data.domain.Page;
+import com.ftb.api.repository.UserRepository;
+import org.springframework.stereotype.Service;
+import com.ftb.api.dto.response.ProductResponse;
+import org.springframework.data.domain.Pageable;
+import com.ftb.api.repository.ProductRepository;
+import com.ftb.api.repository.CategoryRepository;
+import com.ftb.api.dto.response.PaginatedResponse;
+import com.ftb.api.dto.request.CreateProductRequest;
+import com.ftb.api.dto.response.ProductCardResponse;
+import com.ftb.api.dto.response.ProductDetailResponse;
+import com.ftb.api.exception.ResourceNotFoundException;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.transaction.annotation.Transactional;
+import com.ftb.api.repository.specification.ProductSpecification;
 
 
 @Service
@@ -50,6 +50,7 @@ public class ProductService {
         product.setFarmer(farmer);
         product.setCategory(category);
         product.setListingStatus(ProductStatus.ACTIVE);
+        product.setStockQuantity(0);
 
         Product savedProduct = productRepository.save(product);
         return productMapper.toProductResponse(savedProduct);

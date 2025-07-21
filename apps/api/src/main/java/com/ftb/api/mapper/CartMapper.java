@@ -1,14 +1,15 @@
 package com.ftb.api.mapper;
 
-import com.ftb.api.dto.response.CartItemDto;
-import com.ftb.api.dto.response.CartResponseDto;
+import java.util.List;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import com.ftb.api.model.Cart;
 import com.ftb.api.model.CartItem;
 import org.mapstruct.AfterMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import java.util.List;
+import com.ftb.api.dto.response.CartItemDto;
+import com.ftb.api.dto.response.CartResponseDto;
+
 
 @Mapper(componentModel = "spring")
 public interface CartMapper {

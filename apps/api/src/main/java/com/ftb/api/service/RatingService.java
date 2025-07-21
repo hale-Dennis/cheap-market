@@ -1,26 +1,26 @@
 package com.ftb.api.service;
 
-import com.ftb.api.dto.request.CreateRatingRequest;
-import com.ftb.api.dto.response.RatingResponseDto;
-import com.ftb.api.exception.ConflictException;
-import com.ftb.api.exception.InvalidRequestException;
-import com.ftb.api.exception.ResourceNotFoundException;
-import com.ftb.api.mapper.RatingMapper;
+import java.util.UUID;
+import java.math.BigDecimal;
+import com.ftb.api.model.User;
+import java.math.RoundingMode;
 import com.ftb.api.model.Order;
 import com.ftb.api.model.Rating;
-import com.ftb.api.model.User;
 import com.ftb.api.model.OrderStatus;
-import com.ftb.api.repository.OrderRepository;
-import com.ftb.api.repository.RatingRepository;
-import com.ftb.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import com.ftb.api.mapper.RatingMapper;
+import com.ftb.api.repository.UserRepository;
+import com.ftb.api.repository.OrderRepository;
 import org.springframework.stereotype.Service;
+import com.ftb.api.exception.ConflictException;
+import com.ftb.api.repository.RatingRepository;
+import com.ftb.api.dto.response.RatingResponseDto;
+import com.ftb.api.dto.request.CreateRatingRequest;
+import com.ftb.api.exception.InvalidRequestException;
+import com.ftb.api.exception.ResourceNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor

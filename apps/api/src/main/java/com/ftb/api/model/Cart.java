@@ -1,14 +1,14 @@
 package com.ftb.api.model;
 
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.UpdateTimestamp;
-
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.time.Instant;
+import java.util.ArrayList;
+import jakarta.persistence.*;
+import org.hibernate.annotations.UpdateTimestamp;
+
 
 @Entity
 @Table(name = "carts")

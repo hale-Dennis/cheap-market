@@ -17,8 +17,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/v1/admin/products")
-@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class ProductController {
 
     private final ProductService productService;
@@ -33,4 +33,6 @@ public class ProductController {
                 .build();
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+
+    //TODO: add endpoints to update product stock and listing status
 }

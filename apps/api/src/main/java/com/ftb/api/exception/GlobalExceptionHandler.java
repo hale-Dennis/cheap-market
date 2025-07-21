@@ -6,6 +6,8 @@ import com.ftb.api.dto.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -91,6 +93,36 @@ public class GlobalExceptionHandler {
                 .build();
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
     }
+
+    /**
+     * Handles errors caused by a malformed request body (e.g., invalid date format).
+     * @param ex The caught HttpMessageNotReadableException.
+     * @return A ResponseEntity with a 400 Bad Request status.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Object>> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        ApiResponse<Object> response = ApiResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .message("Invalid request body. Please check the data format (e.g., dates should be 'YYYY-MM-DD').")
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Handles errors caused by missing required request parameters.
+     * @param ex The caught MissingServletRequestParameterException.
+     * @return A ResponseEntity with a 400 Bad Request status.
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponse<Object>> handleMissingServletRequestParameter(MissingServletRequestParameterException ex) {
+        String message = "Required request parameter '" + ex.getParameterName() + "' is not present.";
+        ApiResponse<Object> response = ApiResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .message(message)
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGenericException(Exception ex) {

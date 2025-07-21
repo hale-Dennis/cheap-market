@@ -49,7 +49,7 @@ public class Product {
     private String unit;
 
     @Column(nullable = false)
-    private Integer stockQuantity;
+    private Integer stockQuantity = 0;
 
     @Column(nullable = false)
     private LocalDate harvestDate;

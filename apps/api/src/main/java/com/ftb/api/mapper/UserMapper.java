@@ -1,13 +1,14 @@
 package com.ftb.api.mapper;
 
-import com.ftb.api.dto.request.RegisterRequest;
-import com.ftb.api.dto.request.UpdateBuyerProfileRequest;
-import com.ftb.api.dto.response.BuyerProfileResponse;
+import org.mapstruct.Mapper;
 import com.ftb.api.model.User;
 import org.mapstruct.BeanMapping;
-import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
+import com.ftb.api.dto.request.RegisterRequest;
+import com.ftb.api.dto.response.BuyerProfileResponse;
 import org.mapstruct.NullValuePropertyMappingStrategy;
+import com.ftb.api.dto.request.UpdateBuyerProfileRequest;
+
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {

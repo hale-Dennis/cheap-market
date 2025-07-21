@@ -1,9 +1,10 @@
 package com.ftb.api.mapper;
 
+import org.mapstruct.Mapper;
+import com.ftb.api.model.Category;
 import com.ftb.api.dto.request.CategoryRequest;
 import com.ftb.api.dto.response.CategoryResponse;
-import com.ftb.api.model.Category;
-import org.mapstruct.Mapper;
+
 
 @Mapper(componentModel = "spring")
 public interface CategoryMapper {

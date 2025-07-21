@@ -1,19 +1,19 @@
 package com.ftb.api.service;
 
-import com.ftb.api.dto.request.RegisterRequest;
-import com.ftb.api.dto.request.UpdateBuyerProfileRequest;
-import com.ftb.api.dto.response.BuyerProfileResponse;
-import com.ftb.api.mapper.UserMapper;
-import com.ftb.api.model.AccountStatus;
 import com.ftb.api.model.User;
-
 import com.ftb.api.model.UserRole;
-import com.ftb.api.repository.UserRepository;
+import com.ftb.api.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import com.ftb.api.model.AccountStatus;
+import com.ftb.api.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import com.ftb.api.dto.request.RegisterRequest;
+import com.ftb.api.dto.response.BuyerProfileResponse;
+import com.ftb.api.dto.request.UpdateBuyerProfileRequest;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
 
 @Service
 @RequiredArgsConstructor
@@ -45,10 +45,8 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
-        // Use the mapper to apply non-null updates from the DTO
         userMapper.updateUserFromDto(request, user);
 
-        // Persist the changes
         User updatedUser = userRepository.save(user);
 
         return userMapper.toBuyerProfileResponse(updatedUser);

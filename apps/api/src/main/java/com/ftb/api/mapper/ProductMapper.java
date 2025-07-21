@@ -1,20 +1,23 @@
 package com.ftb.api.mapper;
 
-import com.ftb.api.dto.request.CreateProductRequest;
-import com.ftb.api.dto.response.FarmerInfo;
-import com.ftb.api.dto.response.ProductCardResponse;
-import com.ftb.api.dto.response.ProductDetailResponse;
-import com.ftb.api.dto.response.ProductResponse;
-import com.ftb.api.model.Product;
-import com.ftb.api.model.User;
+import java.math.BigDecimal;
+import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import com.ftb.api.model.User;
+import com.ftb.api.model.Product;
+import com.ftb.api.dto.response.FarmerInfo;
+import com.ftb.api.dto.response.ProductResponse;
+import com.ftb.api.dto.response.ProductCardResponse;
+import com.ftb.api.dto.request.CreateProductRequest;
+import com.ftb.api.dto.response.ProductDetailResponse;
+import org.mapstruct.Named;
 
-import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface ProductMapper {
 
+    @Mapping(source = "priceCents", target = "price", qualifiedByName = "centsToBigDecimal")
     Product toProduct(CreateProductRequest request);
 
     @Mapping(source = "farmer.id", target = "farmerId")
@@ -35,4 +38,12 @@ public interface ProductMapper {
     ProductDetailResponse toProductDetailResponse(Product product);
 
     FarmerInfo toFarmerInfo(User farmer);
+
+    @Named("centsToBigDecimal")
+    default BigDecimal centsToBigDecimal(Integer cents) {
+        if (cents == null) {
+            return null;
+        }
+        return BigDecimal.valueOf(cents).movePointLeft(2);
+    }
 }
