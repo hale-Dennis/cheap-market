@@ -1,9 +1,11 @@
 package com.ftb.api.controller;
 
+import com.ftb.api.util.ResponseHandler;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import com.ftb.api.service.UserService;
 import com.ftb.api.dto.response.ApiResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.ftb.api.dto.response.BuyerProfileResponse;
@@ -24,12 +26,7 @@ public class BuyerController {
     public ResponseEntity<ApiResponse<BuyerProfileResponse>> getProfile(Authentication authentication) {
         String email = authentication.getName();
         BuyerProfileResponse profile = userService.getBuyerProfile(email);
-        ApiResponse<BuyerProfileResponse> response = ApiResponse.<BuyerProfileResponse>builder()
-                .status(200)
-                .message("Profile retrieved successfully.")
-                .data(profile)
-                .build();
-        return ResponseEntity.ok(response);
+        return ResponseHandler.successResponse("Profile retrieved successfully.", HttpStatus.OK, profile);
     }
 
     @PutMapping("/profile")
@@ -40,11 +37,6 @@ public class BuyerController {
     ) {
         String email = authentication.getName();
         BuyerProfileResponse updatedProfile = userService.updateBuyerProfile(email, request);
-        ApiResponse<BuyerProfileResponse> response = ApiResponse.<BuyerProfileResponse>builder()
-                .status(200)
-                .message("Profile updated successfully.")
-                .data(updatedProfile)
-                .build();
-        return ResponseEntity.ok(response);
+        return ResponseHandler.successResponse("Profile updated successfully.", HttpStatus.OK, updatedProfile);
     }
 }

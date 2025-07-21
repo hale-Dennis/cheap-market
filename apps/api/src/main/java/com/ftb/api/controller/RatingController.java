@@ -1,5 +1,6 @@
 package com.ftb.api.controller;
 
+import com.ftb.api.util.ResponseHandler;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import com.ftb.api.service.RatingService;
@@ -30,11 +31,6 @@ public class RatingController {
             @Valid @RequestBody CreateRatingRequest request
     ) {
         RatingResponseDto newRating = ratingService.createRating(authentication.getName(), request);
-        ApiResponse<RatingResponseDto> response = ApiResponse.<RatingResponseDto>builder()
-                .status(HttpStatus.CREATED.value())
-                .message("Rating submitted successfully.")
-                .data(newRating)
-                .build();
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return ResponseHandler.successResponse("Rating submitted successfully.", HttpStatus.CREATED, newRating);
     }
 }

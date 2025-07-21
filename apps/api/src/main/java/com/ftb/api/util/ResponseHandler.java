@@ -9,7 +9,7 @@ public final class ResponseHandler {
     private ResponseHandler() {
     }
 
-    public static <T> ResponseEntity<ApiResponse<T>> generateResponse(String message, HttpStatus status, T responseData) {
+    public static <T> ResponseEntity<ApiResponse<T>> successResponse(String message, HttpStatus status, T responseData) {
         ApiResponse<T> response = ApiResponse.<T>builder()
                 .status(status.value())
                 .message(message)
@@ -24,7 +24,7 @@ public final class ResponseHandler {
      * @param status The HTTP status.
      * @return A ResponseEntity containing the formatted error.
      */
-    public static ResponseEntity<ApiResponse<Object>> generateErrorResponse(String message, HttpStatus status) {
+    public static ResponseEntity<ApiResponse<Object>> errorResponse(String message, HttpStatus status) {
         ApiResponse<Object> response = ApiResponse.builder()
                 .status(status.value())
                 .message(message)

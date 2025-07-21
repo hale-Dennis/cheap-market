@@ -1,5 +1,6 @@
 package com.ftb.api.controller;
 
+import com.ftb.api.util.ResponseHandler;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,14 +26,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<JwtResponse>> login(@RequestBody @Valid LoginRequest request) {
         JwtResponse jwtResponse = authenticationService.login(request);
-
-        ApiResponse<JwtResponse> response = ApiResponse.<JwtResponse>builder()
-                .status(200)
-                .message("Login successful")
-                .data(jwtResponse)
-                .build();
-
-        return ResponseEntity.ok(response);
+        return ResponseHandler.successResponse("Login successful", HttpStatus.OK, jwtResponse);
     }
 
     /**
@@ -44,13 +38,6 @@ public class AuthController {
     public ResponseEntity<ApiResponse<JwtResponse>> register(@Valid @RequestBody RegisterRequest request) {
 
         JwtResponse jwtResponse = authenticationService.registerBuyer(request);
-
-        ApiResponse<JwtResponse> response = ApiResponse.<JwtResponse>builder()
-                .status(HttpStatus.CREATED.value())
-                .message("Buyer registered successfully.")
-                .data(jwtResponse)
-                .build();
-
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return ResponseHandler.successResponse("Buyer registered successfully.", HttpStatus.CREATED, jwtResponse);
     }
 }

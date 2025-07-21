@@ -1,5 +1,6 @@
 package com.ftb.api.controller.admin;
 
+import com.ftb.api.util.ResponseHandler;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import com.ftb.api.service.ProductService;
@@ -26,12 +27,7 @@ public class ProductController {
     @PostMapping
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(@Valid @RequestBody CreateProductRequest request) {
         ProductResponse newProduct = productService.createProduct(request);
-        ApiResponse<ProductResponse> response = ApiResponse.<ProductResponse>builder()
-                .status(HttpStatus.CREATED.value())
-                .message("Product listing created successfully.")
-                .data(newProduct)
-                .build();
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return ResponseHandler.successResponse("Product listing created successfully.", HttpStatus.CREATED, newProduct);
     }
 
     //TODO: add endpoints to update product stock and listing status

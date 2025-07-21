@@ -1,5 +1,6 @@
 package com.ftb.api.controller;
 
+import com.ftb.api.util.ResponseHandler;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import com.ftb.api.service.DisputeService;
@@ -30,11 +31,6 @@ public class DisputeController {
             @Valid @RequestBody CreateDisputeRequest request
     ) {
         DisputeResponseDto newDispute = disputeService.createDispute(authentication.getName(), request);
-        ApiResponse<DisputeResponseDto> response = ApiResponse.<DisputeResponseDto>builder()
-                .status(HttpStatus.CREATED.value())
-                .message("Dispute submitted successfully.")
-                .data(newDispute)
-                .build();
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return ResponseHandler.successResponse("Dispute submitted successfully.", HttpStatus.CREATED, newDispute);
     }
 }

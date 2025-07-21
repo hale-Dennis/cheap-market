@@ -1,8 +1,11 @@
 package com.ftb.api.controller;
 
 import java.util.List;
+
+import com.ftb.api.util.ResponseHandler;
 import lombok.RequiredArgsConstructor;
 import com.ftb.api.dto.response.ApiResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import com.ftb.api.service.PickupLocationService;
 import com.ftb.api.dto.response.PickupLocationResponseDto;
@@ -26,11 +29,6 @@ public class PickupLocationController {
             @RequestParam String region
     ) {
         List<PickupLocationResponseDto> locations = pickupLocationService.getLocationsByRegion(region);
-        ApiResponse<List<PickupLocationResponseDto>> response = ApiResponse.<List<PickupLocationResponseDto>>builder()
-                .status(200)
-                .message("Pickup locations retrieved successfully.")
-                .data(locations)
-                .build();
-        return ResponseEntity.ok(response);
+        return ResponseHandler.successResponse("Pickup locations retrieved successfully.", HttpStatus.OK, locations);
     }
 }

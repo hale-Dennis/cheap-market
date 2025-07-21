@@ -1,6 +1,8 @@
 package com.ftb.api.exception;
 
 import java.util.stream.Collectors;
+
+import com.ftb.api.util.ResponseHandler;
 import org.springframework.http.HttpStatus;
 import com.ftb.api.dto.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
@@ -20,11 +22,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiResponse<Object>> handleBadCredentialsException(BadCredentialsException ex) {
-        ApiResponse<Object> response = ApiResponse.builder()
-                .status(HttpStatus.UNAUTHORIZED.value())
-                .message("Invalid email or password")
-                .build();
-        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+        return ResponseHandler.errorResponse("Invalid email or password", HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -33,20 +31,12 @@ public class GlobalExceptionHandler {
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.joining(", "));
 
-        ApiResponse<Object> response = ApiResponse.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .message("Validation failed: " + errors)
-                .build();
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        return ResponseHandler.errorResponse("Validation failed: " + errors, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ApiResponse<Object>> handleConflictException(ConflictException ex) {
-        ApiResponse<Object> response = ApiResponse.builder()
-                .status(HttpStatus.CONFLICT.value())
-                .message(ex.getMessage())
-                .build();
-        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+        return ResponseHandler.errorResponse(ex.getMessage(), HttpStatus.CONFLICT);
     }
 
     /**
@@ -56,11 +46,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Object>> handleResourceNotFoundException(ResourceNotFoundException ex) {
-        ApiResponse<Object> response = ApiResponse.builder()
-                .status(HttpStatus.NOT_FOUND.value())
-                .message(ex.getMessage())
-                .build();
-        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        return ResponseHandler.errorResponse(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -69,29 +55,17 @@ public class GlobalExceptionHandler {
                 .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
                 .collect(Collectors.joining(", "));
 
-        ApiResponse<Object> response = ApiResponse.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .message("Validation failed: " + errors)
-                .build();
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        return ResponseHandler.errorResponse("Validation failed: " + errors, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Object>> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
-        ApiResponse<Object> response = ApiResponse.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .message("Database constraint violation: " + ex.getMostSpecificCause().getMessage())
-                .build();
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        return ResponseHandler.errorResponse("Database constraint violation: " + ex.getMostSpecificCause().getMessage(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Object>> handleAccessDeniedException(AccessDeniedException ex) {
-        ApiResponse<Object> response = ApiResponse.builder()
-                .status(HttpStatus.FORBIDDEN.value())
-                .message("You do not have permission to access this resource.")
-                .build();
-        return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+        return ResponseHandler.errorResponse("You do not have permission to access this resource.", HttpStatus.FORBIDDEN);
     }
 
     /**
@@ -101,11 +75,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiResponse<Object>> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
-        ApiResponse<Object> response = ApiResponse.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .message("Invalid request body. Please check the data format (e.g., dates should be 'YYYY-MM-DD').")
-                .build();
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        return ResponseHandler.errorResponse("Invalid request body. Please check the data format (e.g., dates should be 'YYYY-MM-DD').", HttpStatus.BAD_REQUEST);
     }
 
     /**
@@ -116,20 +86,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ApiResponse<Object>> handleMissingServletRequestParameter(MissingServletRequestParameterException ex) {
         String message = "Required request parameter '" + ex.getParameterName() + "' is not present.";
-        ApiResponse<Object> response = ApiResponse.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .message(message)
-                .build();
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        return ResponseHandler.errorResponse(message, HttpStatus.BAD_REQUEST);
     }
 
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGenericException(Exception ex) {
-        ApiResponse<Object> response = ApiResponse.builder()
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .message("An unexpected internal server error occurred.")
-                .build();
-        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        //TODO: log exception here
+        return ResponseHandler.errorResponse("An unexpected internal server error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

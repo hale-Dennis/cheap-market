@@ -1,10 +1,13 @@
 package com.ftb.api.controller;
 
 import java.util.UUID;
+
+import com.ftb.api.util.ResponseHandler;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import com.ftb.api.service.CartService;
 import com.ftb.api.dto.response.ApiResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import com.ftb.api.dto.response.CartResponseDto;
 import org.springframework.web.bind.annotation.*;
@@ -24,12 +27,7 @@ public class CartController {
     @GetMapping
     public ResponseEntity<ApiResponse<CartResponseDto>> getCart(Authentication authentication) {
         CartResponseDto cart = cartService.getCartForBuyer(authentication.getName());
-        ApiResponse<CartResponseDto> response = ApiResponse.<CartResponseDto>builder()
-                .status(200)
-                .message("Cart retrieved successfully.")
-                .data(cart)
-                .build();
-        return ResponseEntity.ok(response);
+        return ResponseHandler.successResponse("Cart retrieved successfully.", HttpStatus.OK, cart);
     }
 
     @PostMapping
@@ -38,12 +36,7 @@ public class CartController {
             @Valid @RequestBody UpdateCartRequest request
     ) {
         CartResponseDto updatedCart = cartService.addItemToCart(authentication.getName(), request);
-        ApiResponse<CartResponseDto> response = ApiResponse.<CartResponseDto>builder()
-                .status(200)
-                .message("Cart updated successfully.")
-                .data(updatedCart)
-                .build();
-        return ResponseEntity.ok(response);
+        return ResponseHandler.successResponse("Cart updated successfully.", HttpStatus.OK, updatedCart);
     }
 
     @DeleteMapping("/items/{productId}")
@@ -52,11 +45,6 @@ public class CartController {
             @PathVariable UUID productId
     ) {
         CartResponseDto updatedCart = cartService.removeItemFromCart(authentication.getName(), productId);
-        ApiResponse<CartResponseDto> response = ApiResponse.<CartResponseDto>builder()
-                .status(200)
-                .message("Item removed from cart successfully.")
-                .data(updatedCart)
-                .build();
-        return ResponseEntity.ok(response);
+        return ResponseHandler.successResponse("Item removed from cart successfully.", HttpStatus.OK, updatedCart);
     }
 }

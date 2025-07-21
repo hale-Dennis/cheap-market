@@ -2,6 +2,8 @@ package com.ftb.api.controller.admin;
 
 import java.util.List;
 import java.util.UUID;
+
+import com.ftb.api.util.ResponseHandler;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,23 +27,13 @@ public class CategoryController {
     @PostMapping
     public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(@Valid @RequestBody CategoryRequest request) {
         CategoryResponse newCategory = categoryService.createCategory(request);
-        ApiResponse<CategoryResponse> response = ApiResponse.<CategoryResponse>builder()
-                .status(HttpStatus.CREATED.value())
-                .message("Category created successfully.")
-                .data(newCategory)
-                .build();
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return ResponseHandler.successResponse("Category created successfully.", HttpStatus.CREATED, newCategory);
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> getAllCategories() {
         List<CategoryResponse> categories = categoryService.getAllCategories();
-        ApiResponse<List<CategoryResponse>> response = ApiResponse.<List<CategoryResponse>>builder()
-                .status(HttpStatus.OK.value())
-                .message("Categories retrieved successfully.")
-                .data(categories)
-                .build();
-        return ResponseEntity.ok(response);
+        return ResponseHandler.successResponse("Categories retrieved successfully.", HttpStatus.OK, categories);
     }
 
     @PutMapping("/{id}")
@@ -50,12 +42,7 @@ public class CategoryController {
             @Valid @RequestBody CategoryRequest request
     ) {
         CategoryResponse updatedCategory = categoryService.updateCategory(id, request);
-        ApiResponse<CategoryResponse> response = ApiResponse.<CategoryResponse>builder()
-                .status(HttpStatus.OK.value())
-                .message("Category updated successfully.")
-                .data(updatedCategory)
-                .build();
-        return ResponseEntity.ok(response);
+        return ResponseHandler.successResponse("Category updated successfully.", HttpStatus.OK, updatedCategory);
     }
 
     @DeleteMapping("/{id}")

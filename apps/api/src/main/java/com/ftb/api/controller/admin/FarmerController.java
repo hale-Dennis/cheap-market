@@ -1,5 +1,6 @@
 package com.ftb.api.controller.admin;
 
+import com.ftb.api.util.ResponseHandler;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import com.ftb.api.service.FarmerService;
@@ -27,14 +28,7 @@ public class FarmerController {
     public ResponseEntity<ApiResponse<FarmerResponse>> createFarmer(@Valid @RequestBody CreateFarmerRequest request) {
 
         FarmerResponse farmerResponse = farmerService.createFarmer(request);
-
-        ApiResponse<FarmerResponse> response = ApiResponse.<FarmerResponse>builder()
-                .status(HttpStatus.CREATED.value())
-                .message("Farmer account created successfully.")
-                .data(farmerResponse)
-                .build();
-
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return ResponseHandler.successResponse("Farmer account created successfully.", HttpStatus.CREATED, farmerResponse);
     }
 
     /**
@@ -50,13 +44,6 @@ public class FarmerController {
     ) {
 
         PaginatedResponse<FarmerResponse> paginatedResponse = farmerService.getAllFarmers(pageable);
-
-        ApiResponse<PaginatedResponse<FarmerResponse>> response = ApiResponse.<PaginatedResponse<FarmerResponse>>builder()
-                .status(HttpStatus.OK.value())
-                .message("Successfully retrieved farmer list.")
-                .data(paginatedResponse)
-                .build();
-
-        return ResponseEntity.ok(response);
+        return ResponseHandler.successResponse("Successfully retrieved farmer list.", HttpStatus.OK, paginatedResponse);
     }
 }
