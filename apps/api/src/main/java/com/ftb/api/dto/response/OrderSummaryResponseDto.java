@@ -13,6 +13,6 @@ import com.ftb.api.model.OrderStatus;
 public class OrderSummaryResponseDto {
     private UUID id;
     private Instant createdAt;
-    private long finalTotal;
+    private long finalTotalCents;
     private OrderStatus status;
 }

@@ -13,7 +13,7 @@ import java.util.UUID;
 public class AdminOrderSummaryDto {
     private UUID id;
     private Instant createdAt;
-    private BigDecimal finalTotal;
+    private long finalTotalCents;
     private OrderStatus status;
     private String buyerName;
 }
