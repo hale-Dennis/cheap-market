@@ -3,6 +3,7 @@ package com.ftb.api.exception;
 import java.util.stream.Collectors;
 
 import com.ftb.api.util.ResponseHandler;
+import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.http.HttpStatus;
 import com.ftb.api.dto.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
@@ -87,6 +88,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleMissingServletRequestParameter(MissingServletRequestParameterException ex) {
         String message = "Required request parameter '" + ex.getParameterName() + "' is not present.";
         return ResponseHandler.errorResponse(message, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ExpiredJwtException.class)
+    public ResponseEntity<ApiResponse<Object>> handleExpiredJwtException(ExpiredJwtException ex) {
+        return ResponseHandler.errorResponse("Please log in again.", HttpStatus.UNAUTHORIZED);
     }
 
 
