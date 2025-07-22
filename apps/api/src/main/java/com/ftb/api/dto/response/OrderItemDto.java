@@ -11,5 +11,5 @@ public class OrderItemDto {
     private UUID productId;
     private String name;
     private int quantity;
-    private Integer priceAtPurchase;
+    private Integer priceAtPurchaseCents;
 }
