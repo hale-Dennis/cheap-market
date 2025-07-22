@@ -1,7 +1,11 @@
 package com.ftb.api.service;
 
 import com.ftb.api.dto.request.CreateDisputeRequest;
+import com.ftb.api.dto.request.UpdateDisputeRequestDto;
+import com.ftb.api.dto.response.AdminDisputeDetailDto;
+import com.ftb.api.dto.response.AdminDisputeSummaryDto;
 import com.ftb.api.dto.response.DisputeResponseDto;
+import com.ftb.api.dto.response.PaginatedResponse;
 import com.ftb.api.exception.ConflictException;
 import com.ftb.api.exception.InvalidRequestException;
 import com.ftb.api.exception.ResourceNotFoundException;
@@ -16,9 +20,15 @@ import com.ftb.api.repository.OrderRepository;
 import com.ftb.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -61,5 +71,41 @@ public class DisputeService {
         log.info("New dispute submitted for order: {}. Admin notification required.", order.getId());
 
         return disputeMapper.toDisputeResponseDto(newDispute);
+    }
+
+    @Transactional(readOnly = true)
+    public PaginatedResponse<AdminDisputeSummaryDto> getAllDisputes(Pageable pageable) {
+        Page<Dispute> disputePage = disputeRepository.findAll(pageable);
+
+        List<AdminDisputeSummaryDto> disputeSummaries = disputePage.getContent().stream()
+                .map(disputeMapper::toAdminDisputeSummaryDto)
+                .collect(Collectors.toList());
+
+        return PaginatedResponse.<AdminDisputeSummaryDto>builder()
+                .content(disputeSummaries)
+                .currentPage(disputePage.getNumber())
+                .totalPages(disputePage.getTotalPages())
+                .totalElements(disputePage.getTotalElements())
+                .size(disputePage.getSize())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public AdminDisputeDetailDto getDisputeById(UUID disputeId) {
+        Dispute dispute = disputeRepository.findById(disputeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Dispute not found with id: " + disputeId));
+        return disputeMapper.toAdminDisputeDetailDto(dispute);
+    }
+
+    @Transactional
+    public AdminDisputeDetailDto updateDispute(UUID disputeId, UpdateDisputeRequestDto request) {
+        Dispute dispute = disputeRepository.findById(disputeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Dispute not found with id: " + disputeId));
+
+        dispute.setStatus(request.getStatus());
+        dispute.setResolutionNotes(request.getResolutionNotes());
+
+        Dispute updatedDispute = disputeRepository.save(dispute);
+        return disputeMapper.toAdminDisputeDetailDto(updatedDispute);
     }
 }

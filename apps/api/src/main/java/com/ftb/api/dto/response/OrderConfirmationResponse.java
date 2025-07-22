@@ -15,9 +15,9 @@ public class OrderConfirmationResponse {
     private UUID id;
     private OrderStatus status;
     private List<OrderItemDto> items;
-    private long itemsSubtotal;
-    private long deliveryFee;
-    private long finalTotal;
+    private long itemsSubtotalCents;
+    private long deliveryFeeCents;
+    private long finalTotalCents;
     private FulfillmentType fulfillmentType;
     private Instant createdAt;
 }

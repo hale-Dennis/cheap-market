@@ -16,4 +16,6 @@ public interface RatingRepository extends JpaRepository<Rating, UUID> {
      * @return true if a rating exists, false otherwise.
      */
     boolean existsByOrderIdAndBuyerId(UUID orderId, UUID buyerId);
+
+    boolean existsByFarmerId(UUID farmerId);
 }

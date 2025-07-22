@@ -1,10 +1,17 @@
 package com.ftb.api.service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
+
+import com.ftb.api.dto.request.UpdateFarmerRequest;
+import com.ftb.api.exception.ResourceNotFoundException;
 import com.ftb.api.model.User;
 import com.ftb.api.model.UserRole;
 import java.util.stream.Collectors;
+
+import com.ftb.api.repository.ProductRepository;
+import com.ftb.api.repository.RatingRepository;
 import lombok.RequiredArgsConstructor;
 import com.ftb.api.mapper.FarmerMapper;
 import com.ftb.api.model.AccountStatus;
@@ -27,6 +34,8 @@ public class FarmerService {
     private final UserRepository userRepository;
     private final FarmerMapper farmerMapper;
     private final PasswordEncoder passwordEncoder;
+    private final ProductRepository productRepository;
+    private final RatingRepository ratingRepository;
 
     @Transactional
     public FarmerResponse createFarmer(CreateFarmerRequest request) {
@@ -69,5 +78,40 @@ public class FarmerService {
                 .totalElements(farmerPage.getTotalElements())
                 .size(farmerPage.getSize())
                 .build();
+    }
+
+    @Transactional
+    public FarmerResponse updateFarmer(UUID farmerId, UpdateFarmerRequest request) {
+
+        User farmer = userRepository.findById(farmerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Farmer not found with id: " + farmerId));
+
+        if (!Objects.equals(farmer.getPhoneNumber(), request.getPhoneNumber()) && userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+            throw new ConflictException("This phone number is already in use by another account.");
+        }
+
+        farmer.setFullName(request.getFullName());
+        farmer.setPhoneNumber(request.getPhoneNumber());
+        farmer.setRegion(request.getRegion());
+        farmer.setAccountStatus(request.getAccountStatus());
+
+        User updatedFarmer = userRepository.save(farmer);
+        return farmerMapper.toFarmerResponse(updatedFarmer);
+    }
+
+    @Transactional
+    public void deleteFarmer(UUID farmerId) {
+        if (!userRepository.existsById(farmerId)) {
+            throw new ResourceNotFoundException("Farmer not found with id: " + farmerId);
+        }
+
+        if (productRepository.existsByFarmerId(farmerId)) {
+            throw new ConflictException("Cannot delete a farmer with active product listings.");
+        }
+
+        if (ratingRepository.existsByFarmerId(farmerId)) {
+            throw new ConflictException("Cannot delete a farmer who has received ratings.");
+        }
+        userRepository.deleteById(farmerId);
     }
 }

@@ -16,4 +16,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
      * @return true if at least one product references the category, false otherwise.
      */
     boolean existsByCategoryId(UUID categoryId);
+
+    boolean existsByFarmerId(UUID farmerId);
 }

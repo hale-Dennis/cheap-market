@@ -17,4 +17,11 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
      * @return A Page object containing the buyer's orders.
      */
     Page<Order> findByBuyerId(UUID buyerId, Pageable pageable);
+
+    /**
+     * Checks if any order is associated with the given pickup location ID.
+     * @param pickupLocationId The ID of the pickup location to check.
+     * @return true if at least one order references the location, false otherwise.
+     */
+    boolean existsByPickupLocationId(UUID pickupLocationId);
 }

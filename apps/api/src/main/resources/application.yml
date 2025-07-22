@@ -21,3 +21,8 @@ spring:
         format_sql: true
         show_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
+springdoc:
+  api-docs:
+    resolve-pageable-as-query-parameters: true
+

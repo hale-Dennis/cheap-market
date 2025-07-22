@@ -42,7 +42,7 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PaymentStatus paymentStatus;
+    private PaymentStatus paymentStatus  = PaymentStatus.UNPAID;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

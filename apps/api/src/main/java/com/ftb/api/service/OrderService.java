@@ -1,6 +1,8 @@
 package com.ftb.api.service;
 
 import com.ftb.api.dto.request.PlaceOrderRequest;
+import com.ftb.api.dto.request.UpdateOrderStatusRequest;
+import com.ftb.api.dto.response.AdminOrderSummaryDto;
 import com.ftb.api.dto.response.OrderConfirmationResponse;
 import com.ftb.api.exception.InvalidRequestException;
 import com.ftb.api.exception.ResourceNotFoundException;
@@ -122,5 +124,43 @@ public class OrderService {
                 .totalElements(orderPage.getTotalElements())
                 .size(orderPage.getSize())
                 .build();
+    }
+
+    @Transactional
+    public OrderConfirmationResponse updateOrderStatus(UUID orderId, UpdateOrderStatusRequest request) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        order.setStatus(request.getStatus());
+
+        Order updatedOrder = orderRepository.save(order);
+
+        return orderMapper.toOrderConfirmationResponse(updatedOrder);
+    }
+
+    @Transactional(readOnly = true)
+    public PaginatedResponse<AdminOrderSummaryDto> getAllOrders(Pageable pageable) {
+        Page<Order> orderPage = orderRepository.findAll(pageable);
+
+        List<AdminOrderSummaryDto> orderSummaries = orderPage.getContent().stream()
+                .map(orderMapper::toAdminOrderSummaryDto)
+                .collect(Collectors.toList());
+
+        return PaginatedResponse.<AdminOrderSummaryDto>builder()
+                .content(orderSummaries)
+                .currentPage(orderPage.getNumber())
+                .totalPages(orderPage.getTotalPages())
+                .totalElements(orderPage.getTotalElements())
+                .size(orderPage.getSize())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public OrderConfirmationResponse getAdminOrderById(UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        return orderMapper.toOrderConfirmationResponse(order);
     }
 }
