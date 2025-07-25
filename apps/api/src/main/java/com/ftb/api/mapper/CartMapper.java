@@ -19,20 +19,10 @@ public interface CartMapper {
     @Mapping(target = "primaryImageUrl", expression = "java(getPrimaryImageUrl(item.getProduct().getImageUrls()))")
     CartItemDto toCartItemDto(CartItem item);
 
+    @Mapping(source = "totalItems", target = "totalItems")
+    @Mapping(source = "subtotalCents", target = "subtotalCents")
     CartResponseDto toCartResponseDto(Cart cart);
 
-    @AfterMapping
-    default void calculateTotals(@MappingTarget CartResponseDto dto, Cart cart) {
-        if (cart.getItems() == null || cart.getItems().isEmpty()) {
-            dto.setTotalItems(0);
-            dto.setSubtotalCents(0L);
-            return;
-        }
-        dto.setTotalItems(cart.getItems().stream().mapToInt(CartItem::getQuantity).sum());
-        dto.setSubtotalCents(cart.getItems().stream()
-                .mapToLong(item -> (long) item.getQuantity() * item.getPriceCentsAtAdd())
-                .sum());
-    }
 
     default String getPrimaryImageUrl(List<String> imageUrls) {
         if (imageUrls == null || imageUrls.isEmpty()) {

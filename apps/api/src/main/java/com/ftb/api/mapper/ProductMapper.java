@@ -22,6 +22,7 @@ public interface ProductMapper {
 
     @Mapping(source = "farmer.id", target = "farmerId")
     @Mapping(source = "category.id", target = "categoryId")
+    @Mapping(source = "price", target = "priceCents", qualifiedByName = "bigDecimalToCentsInt")
     ProductResponse toProductResponse(Product product);
 
     @Mapping(target = "primaryImageUrl", expression = "java(getPrimaryImageUrl(product.getImageUrls()))")
@@ -45,5 +46,13 @@ public interface ProductMapper {
             return null;
         }
         return BigDecimal.valueOf(cents).movePointLeft(2);
+    }
+
+    @Named("bigDecimalToCentsInt")
+    default Integer bigDecimalToCentsInt(BigDecimal value) {
+        if (value == null) {
+            return null;
+        }
+        return value.movePointRight(2).intValue();
     }
 }

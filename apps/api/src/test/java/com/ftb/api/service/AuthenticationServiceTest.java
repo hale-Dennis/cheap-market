@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import org.junit.jupiter.api.BeforeEach;
 import com.ftb.api.dto.request.LoginRequest;
-import com.ftb.api.dto.response.JwtResponse;
+import com.ftb.api.dto.response.LoginResponse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -48,7 +48,7 @@ class AuthenticationServiceTest {
         String expectedToken = "mock.jwt.token";
         when(jwtService.generateToken(any(UserDetails.class))).thenReturn(expectedToken);
 
-        JwtResponse response = authenticationService.login(request);
+        LoginResponse response = authenticationService.login(request);
 
         assertNotNull(response);
         assertEquals(expectedToken, response.getToken());
@@ -81,7 +81,7 @@ class AuthenticationServiceTest {
         when(jwtService.generateToken(any())).thenReturn("new.jwt.token");
 
         // When
-        JwtResponse response = authenticationService.registerBuyer(request);
+        LoginResponse response = authenticationService.registerBuyer(request);
 
         // Then
         assertNotNull(response);

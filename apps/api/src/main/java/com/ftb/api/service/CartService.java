@@ -59,7 +59,8 @@ public class CartService {
             cart.addItem(newItem);
         }
 
-        return cartMapper.toCartResponseDto(cartRepository.save(cart));
+        cartRepository.save(cart);
+        return cartMapper.toCartResponseDto(cart);
     }
 
     @Transactional
@@ -72,7 +73,8 @@ public class CartService {
                 .findFirst()
                 .ifPresent(cart::removeItem);
 
-        return cartMapper.toCartResponseDto(cartRepository.save(cart));
+        cartRepository.save(cart);
+        return cartMapper.toCartResponseDto(cart);
     }
 
     private User findUserByEmail(String email) {
@@ -81,7 +83,7 @@ public class CartService {
     }
 
     private Cart getOrCreateCartForBuyer(User buyer) {
-        return cartRepository.findByBuyerId(buyer.getId()).orElseGet(() -> {
+        return cartRepository.findByBuyerIdWithItems(buyer.getId()).orElseGet(() -> {
             Cart newCart = new Cart();
             newCart.setBuyer(buyer);
             return cartRepository.save(newCart);

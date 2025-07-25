@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.when;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.http.MediaType;
-import com.ftb.api.dto.response.JwtResponse;
+import com.ftb.api.dto.response.LoginResponse;
 import com.ftb.api.dto.request.LoginRequest;
 import static org.mockito.ArgumentMatchers.any;
 import com.ftb.api.service.AuthenticationService;
@@ -45,7 +45,7 @@ class AuthControllerTest {
     @Test
     void login_WithValidCredentials_ShouldReturn200AndToken() throws Exception {
         LoginRequest request = new LoginRequest("admin@test.com", "password");
-        JwtResponse jwtResponse = new JwtResponse("mock.jwt.token");
+        LoginResponse jwtResponse = new LoginResponse("mock.jwt.token");
 
         when(authenticationService.login(any(LoginRequest.class))).thenReturn(jwtResponse);
 
@@ -77,7 +77,7 @@ class AuthControllerTest {
     void register_ValidRequest_ShouldReturn201Created() throws Exception {
         // Given
         RegisterRequest request = new RegisterRequest("New Buyer", "buyer@test.com", "Password123", "Test Region");
-        when(authenticationService.registerBuyer(any())).thenReturn(new JwtResponse("new.jwt.token"));
+        when(authenticationService.registerBuyer(any())).thenReturn(new LoginResponse("new.jwt.token"));
 
         // When & Then
         mockMvc.perform(post("/api/v1/auth/register")

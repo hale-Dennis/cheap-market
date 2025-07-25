@@ -60,10 +60,11 @@ The backend exposes a RESTful API at the `/api/v1` base path.
 
 ### Authentication
 
-| Endpoint | Description | Auth |
-| :--- | :--- | :--- |
-| `POST /auth/login` | Logs in any user (Admin, Buyer) and returns a JWT. | Public |
-| `POST /auth/register` | Registers a new Buyer account. | Public |
+| Endpoint              | Description                                                                    | Auth |
+|:----------------------|:-------------------------------------------------------------------------------| :--- |
+| `POST /auth/login`    | Logs in any user (Admin, Buyer) and returns an accessToken and a refreshToken. | Public |
+| `POST /auth/register` | Registers a new Buyer account.                                                 | Public |
+| `POST /auth/refresh`  | returns a new accessToken for a user with a refreshToken                       | Public |
 
 ### Public Endpoints
 

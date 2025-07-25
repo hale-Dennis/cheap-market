@@ -6,6 +6,7 @@ application:
     jwt:
       secret-key: ${JWT_SECRET}
       expiration: 3600000
+      refresh-token-expiration: 604800000
 spring:
   application:
     name: api

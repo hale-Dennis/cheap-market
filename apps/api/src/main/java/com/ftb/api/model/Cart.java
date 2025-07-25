@@ -44,4 +44,18 @@ public class Cart {
         items.remove(item);
         item.setCart(null);
     }
+
+    @Transient
+    public int getTotalItems() {
+        return this.items.stream()
+                .mapToInt(CartItem::getQuantity)
+                .sum();
+    }
+
+    @Transient
+    public long getSubtotalCents() {
+        return this.items.stream()
+                .mapToLong(item -> (long) item.getQuantity() * item.getPriceCentsAtAdd())
+                .sum();
+    }
 }
