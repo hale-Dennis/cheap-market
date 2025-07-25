@@ -4,6 +4,7 @@ import java.util.stream.Collectors;
 
 import com.ftb.api.util.ResponseHandler;
 import io.jsonwebtoken.ExpiredJwtException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import com.ftb.api.dto.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)
@@ -95,10 +97,15 @@ public class GlobalExceptionHandler {
         return ResponseHandler.errorResponse("Please log in again.", HttpStatus.UNAUTHORIZED);
     }
 
+    @ExceptionHandler(TokenRefreshException.class)
+    public ResponseEntity<ApiResponse<Object>> handleTokenRefreshException(TokenRefreshException ex) {
+        return ResponseHandler.errorResponse(ex.getMessage(), HttpStatus.FORBIDDEN);
+    }
+
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGenericException(Exception ex) {
-        //TODO: log exception here
+        log.error("An unexpected internal server error occurred: ", ex);
         return ResponseHandler.errorResponse("An unexpected internal server error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
