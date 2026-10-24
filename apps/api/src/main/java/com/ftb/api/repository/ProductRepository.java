@@ -10,6 +10,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 
 import java.util.UUID;
+import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpecificationExecutor<Product> {
@@ -27,4 +28,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     @Override
     @EntityGraph(attributePaths = {"farmer", "category"})
     Page<Product> findAll(Specification<Product> spec, Pageable pageable);
+
+    /** A product with its farmer and category, for the public detail page. */
+    @EntityGraph(attributePaths = {"farmer", "category"})
+    Optional<Product> findWithFarmerAndCategoryById(UUID id);
 }

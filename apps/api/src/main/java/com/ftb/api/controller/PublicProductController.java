@@ -62,6 +62,8 @@ public class PublicProductController {
     @GetMapping("/{productId}")
     public ResponseEntity<ApiResponse<ProductDetailResponse>> getPublicProductById(@PathVariable UUID productId) {
         ProductDetailResponse product = productService.getPublicProductById(productId);
-        return ResponseHandler.successResponse("Product details retrieved successfully.", HttpStatus.OK, product);
+        return ResponseEntity.ok()
+                .cacheControl(CATALOG_CACHE)
+                .body(ResponseHandler.successResponse("Product details retrieved successfully.", HttpStatus.OK, product).getBody());
     }
 }

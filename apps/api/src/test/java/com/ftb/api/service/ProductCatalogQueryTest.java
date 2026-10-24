@@ -20,6 +20,8 @@ import org.springframework.data.domain.PageRequest;
 import com.ftb.api.service.storage.ImageStorage;
 import com.ftb.api.dto.response.PaginatedResponse;
 import com.ftb.api.dto.response.ProductCardResponse;
+import com.ftb.api.dto.response.ProductDetailResponse;
+import com.ftb.api.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
@@ -154,5 +156,36 @@ class ProductCatalogQueryTest {
         assertEquals(23, first.getTotalElements());
         assertEquals(2, first.getTotalPages());
         assertEquals("Item 21", second.getContent().get(0).getName());
+    }
+
+    @Test
+    void detail_ShouldReturnAllFieldsWithFarmerRatingAndCategory() {
+        voltaFarmer.setAverageRating(4.5);
+        voltaFarmer.setRatingCount(12);
+        entityManager.persistAndFlush(voltaFarmer);
+        Product tomatoes = product("Tomatoes", voltaFarmer, vegetables, ProductStatus.ACTIVE, "18.50", List.of("/1.jpg", "/2.jpg"));
+        entityManager.clear();
+
+        ProductDetailResponse detail = productService.getPublicProductById(tomatoes.getId());
+
+        assertEquals("Tomatoes", detail.getName());
+        assertEquals(1850, detail.getPriceCents());
+        assertEquals(List.of("/1.jpg", "/2.jpg"), detail.getImageUrls());
+        assertEquals(vegetables.getName(), detail.getCategoryName());
+        assertEquals("Volta Farmer", detail.getFarmer().getFullName());
+        assertEquals("VOLTA", detail.getFarmer().getRegion());
+        assertEquals(4.5, detail.getFarmer().getAverageRating());
+        assertEquals(12, detail.getFarmer().getRatingCount());
+    }
+
+    @Test
+    void detail_ShouldHideInactiveListingsAndSuspendedFarmers() {
+        Product inactive = product("Hidden", voltaFarmer, vegetables, ProductStatus.INACTIVE, "1.00", List.of("/a.jpg"));
+        User suspended = farmer("Suspended", "VOLTA", AccountStatus.SUSPENDED);
+        Product fromSuspended = product("Pepper", suspended, vegetables, ProductStatus.ACTIVE, "1.00", List.of("/a.jpg"));
+
+        assertThrows(ResourceNotFoundException.class, () -> productService.getPublicProductById(inactive.getId()));
+        assertThrows(ResourceNotFoundException.class, () -> productService.getPublicProductById(fromSuspended.getId()));
+        assertThrows(ResourceNotFoundException.class, () -> productService.getPublicProductById(UUID.randomUUID()));
     }
 }

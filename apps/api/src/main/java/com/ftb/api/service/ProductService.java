@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import com.ftb.api.repository.*;
 import lombok.RequiredArgsConstructor;
 import com.ftb.api.model.ProductStatus;
+import com.ftb.api.model.AccountStatus;
 import com.ftb.api.mapper.ProductMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
@@ -122,9 +123,11 @@ public class ProductService {
     @Transactional(readOnly = true)
     public ProductDetailResponse getPublicProductById(UUID productId) {
 
-        Product product = productRepository.findById(productId)
+        // Same visibility as the catalog: active listings from farmers who aren't suspended.
+        Product product = productRepository.findWithFarmerAndCategoryById(productId)
                 .filter(p -> p.getListingStatus() == ProductStatus.ACTIVE)
-                .orElseThrow(() -> new ResourceNotFoundException("Active product not found with id: " + productId));
+                .filter(p -> p.getFarmer().getAccountStatus() == AccountStatus.ACTIVE)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
         return productMapper.toProductDetailResponse(product);
     }
 

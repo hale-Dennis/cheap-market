@@ -41,9 +41,9 @@ test.describe('Public catalog', () => {
     await page.getByRole('button', { name: 'Show produce' }).click();
 
     await expect(page.getByText(/Showing produce from farmers in/)).toContainText('Upper West');
-    const shown = await cardNames(page);
-    expect(shown).toEqual(expect.arrayContaining([names.yam, names.mango]));
-    expect(shown).not.toContain(names.elsewhere);
+    // Wait for the grid to load before reading it.
+    await expect.poll(() => cardNames(page)).toEqual(expect.arrayContaining([names.yam, names.mango]));
+    expect(await cardNames(page)).not.toContain(names.elsewhere);
 
     const yam = grid(page).getByRole('link', { name: new RegExp(names.yam) });
     await expect(yam).toContainText('GH₵ 25.50 per kg');

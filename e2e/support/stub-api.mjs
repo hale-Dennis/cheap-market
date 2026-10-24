@@ -83,6 +83,52 @@ function listCatalog(url, res) {
   });
 }
 
+function productDetail(id) {
+  const product = products.find((p) => p.id === id && p.listingStatus === 'ACTIVE');
+  if (!product) return null;
+  const farmer = farmers.find((f) => f.id === product.farmerId);
+  return {
+    id: product.id,
+    name: product.name,
+    description: product.description,
+    priceCents: product.priceCents,
+    unit: product.unit,
+    harvestDate: product.harvestDate,
+    imageUrls: product.imageUrls,
+    categoryName: categories.find((c) => c.id === product.categoryId)?.name,
+    farmer: { fullName: farmer.fullName, region: farmer.region, averageRating: null, ratingCount: 0 },
+  };
+}
+
+// Carts keyed by buyer email: productId -> quantity.
+const carts = new Map();
+
+function cartFor(email) {
+  const items = [...(carts.get(email) ?? new Map())].map(([productId, quantity]) => {
+    const product = products.find((p) => p.id === productId);
+    return { productId, name: product.name, priceCentsAtAdd: product.priceCents, quantity, primaryImageUrl: product.imageUrls[0] ?? null };
+  });
+  return {
+    items,
+    totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
+    subtotalCents: items.reduce((sum, item) => sum + item.quantity * item.priceCentsAtAdd, 0),
+  };
+}
+
+async function handleCart(req, res, email) {
+  if (req.method === 'POST') {
+    const { productId, quantity } = await readJson(req);
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
+      return send(res, 400, { message: 'Validation failed: quantity: Quantity must be between 1 and 99' });
+    }
+    if (!productDetail(productId)) return send(res, 404, { message: `Product not found with id: ${productId}` });
+    if (!carts.has(email)) carts.set(email, new Map());
+    carts.get(email).set(productId, quantity);
+    return send(res, 200, { message: 'Cart updated successfully.', data: cartFor(email) });
+  }
+  return send(res, 200, { message: 'Cart retrieved successfully.', data: cartFor(email) });
+}
+
 async function handleProducts(req, res) {
   if (req.method === 'GET') {
     return send(res, 200, { message: 'Admin products retrieved successfully.', data: { content: products } });
@@ -305,6 +351,19 @@ createServer(async (req, res) => {
   }
   if (req.method === 'GET' && url.pathname === '/api/v1/products') {
     return listCatalog(url, res);
+  }
+  const detailMatch = /^\/api\/v1\/products\/([^/]+)$/.exec(url.pathname);
+  if (req.method === 'GET' && detailMatch) {
+    const detail = productDetail(detailMatch[1]);
+    return detail
+      ? send(res, 200, { message: 'Product details retrieved successfully.', data: detail })
+      : send(res, 404, { message: `Product not found with id: ${detailMatch[1]}` });
+  }
+  if (url.pathname === '/api/v1/cart') {
+    const session = await sessionFromRequest(req);
+    if (!session) return send(res, 401, { message: 'Authentication is required to access this resource.' });
+    if (session.role !== 'BUYER') return send(res, 403, { message: 'You do not have permission to access this resource.' });
+    return handleCart(req, res, session.email);
   }
   if (req.method === 'GET' && url.pathname === '/api/v1/categories') {
     const sorted = [...categories].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));

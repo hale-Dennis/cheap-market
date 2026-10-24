@@ -39,7 +39,14 @@ export function seedFarmer(fullName: string, region = 'VOLTA') {
 }
 
 /** Creates an active listing directly in the stub API and returns it. */
-export function seedListing(listing: { farmerId: string; categoryId: string; name: string; priceCents?: number }) {
+export function seedListing(listing: {
+  farmerId: string;
+  categoryId: string;
+  name: string;
+  priceCents?: number;
+  description?: string;
+  imageUrls?: string[];
+}) {
   return stubRequest<{ id: string; name: string }>('/api/v1/admin/products', {
     method: 'POST',
     body: JSON.stringify({
