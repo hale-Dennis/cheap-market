@@ -1,4 +1,8 @@
-import type { LoginRequest, UserRole } from '@cheap-market/shared-types';
+import type {
+  LoginRequest,
+  RegisterRequest,
+  UserRole,
+} from '@cheap-market/shared-types';
 
 export interface LoginResult {
   role: UserRole;
@@ -6,24 +10,37 @@ export interface LoginResult {
 
 export class AuthError extends Error {}
 
-/** Logs in via the Next.js API route, which stores the session in an HttpOnly cookie. */
-export async function login(credentials: LoginRequest): Promise<LoginResult> {
+/** Posts to one of our session API routes, which store the session in an HttpOnly cookie. */
+async function startSession(
+  path: string,
+  body: unknown,
+  fallbackError: string,
+): Promise<LoginResult> {
   let response: Response;
   try {
-    response = await fetch('/api/auth/login', {
+    response = await fetch(path, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials),
+      body: JSON.stringify(body),
     });
   } catch {
     throw new AuthError('Unable to reach the server. Please try again.');
   }
 
-  const body = await response.json().catch(() => null);
+  const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new AuthError(body?.message ?? 'Login failed. Please try again.');
+    throw new AuthError(payload?.message ?? fallbackError);
   }
-  return body as LoginResult;
+  return payload as LoginResult;
+}
+
+export function login(credentials: LoginRequest): Promise<LoginResult> {
+  return startSession('/api/auth/login', credentials, 'Login failed. Please try again.');
+}
+
+/** Creates a buyer account and signs the new buyer in. */
+export function register(request: RegisterRequest): Promise<LoginResult> {
+  return startSession('/api/auth/register', request, 'Sign-up failed. Please try again.');
 }
 
 export async function logout(): Promise<void> {

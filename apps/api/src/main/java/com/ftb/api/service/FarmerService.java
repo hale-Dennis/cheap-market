@@ -3,7 +3,6 @@ package com.ftb.api.service;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.Locale;
 import com.ftb.api.util.PhoneNumbers;
 import com.ftb.api.exception.InvalidRequestException;
 
@@ -127,7 +126,7 @@ public class FarmerService {
     }
 
     private static String normalizeOptionalEmail(String email) {
-        return email == null || email.isBlank() ? null : email.trim().toLowerCase(Locale.ROOT);
+        return email == null || email.isBlank() ? null : AuthenticationService.normalizeEmail(email);
     }
 
     private String normalizePhoneNumber(String phoneNumber) {

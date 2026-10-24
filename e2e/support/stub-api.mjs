@@ -8,9 +8,16 @@ import { SignJWT, jwtVerify } from 'jose';
 const port = Number(process.env.PORT);
 const key = new Uint8Array(Buffer.from(process.env.JWT_SECRET, 'base64'));
 
+// Keyed by lower-cased email. Buyers registered through /auth/register are added here.
 const USERS = {
   'admin@test.com': { password: 'admin-password', role: 'ADMIN' },
-  'buyer@test.com': { password: 'buyer-password', role: 'BUYER' },
+  'buyer@test.com': {
+    password: 'buyer-password',
+    role: 'BUYER',
+    fullName: 'Test Buyer',
+    region: 'ASHANTI',
+    deliveryAddress: null,
+  },
 };
 
 const farmers = [];
@@ -26,12 +33,12 @@ async function readJson(req) {
   return JSON.parse(raw || '{}');
 }
 
-async function roleFromRequest(req) {
+async function sessionFromRequest(req) {
   const header = req.headers.authorization ?? '';
   if (!header.startsWith('Bearer ')) return null;
   try {
     const { payload } = await jwtVerify(header.slice(7), key);
-    return payload.role;
+    return { email: payload.sub, role: payload.role };
   } catch {
     return null;
   }
@@ -43,22 +50,65 @@ function normalizePhone(raw) {
   return match ? `+233${match[1]}` : null;
 }
 
-async function login(req, res) {
-  const { email, password } = await readJson(req);
-  const user = USERS[email];
-  if (!user || user.password !== password) {
-    return send(res, 401, { message: 'Invalid email or password' });
-  }
-  const accessToken = await new SignJWT({ role: user.role })
+async function tokensFor(email, role) {
+  const accessToken = await new SignJWT({ role })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(email)
     .setIssuedAt()
     .setExpirationTime('1h')
     .sign(key);
-  return send(res, 200, {
-    message: 'Login successful',
-    data: { accessToken, refreshToken: 'stub-refresh-token' },
+  return { accessToken, refreshToken: 'stub-refresh-token' };
+}
+
+async function login(req, res) {
+  const body = await readJson(req);
+  const email = String(body.email ?? '').trim().toLowerCase();
+  const user = USERS[email];
+  if (!user || user.password !== body.password) {
+    return send(res, 401, { message: 'Invalid email or password' });
+  }
+  return send(res, 200, { message: 'Login successful', data: await tokensFor(email, user.role) });
+}
+
+async function registerBuyer(req, res) {
+  const body = await readJson(req);
+  const email = String(body.email ?? '').trim().toLowerCase();
+  const password = String(body.password ?? '');
+  if (!body.fullName || !email || !body.region || password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+    return send(res, 400, { message: 'Validation failed' });
+  }
+  if (USERS[email]) {
+    return send(res, 409, { message: 'A user with this email already exists.' });
+  }
+  USERS[email] = {
+    password,
+    role: 'BUYER',
+    fullName: String(body.fullName).trim(),
+    region: body.region,
+    deliveryAddress: null,
+  };
+  return send(res, 201, { message: 'Buyer registered successfully.', data: await tokensFor(email, 'BUYER') });
+}
+
+function buyerProfile(email) {
+  const { fullName, region, deliveryAddress } = USERS[email];
+  return { fullName, email, region, deliveryAddress };
+}
+
+async function updateBuyerProfile(req, res, email) {
+  const body = await readJson(req);
+  const address = body.deliveryAddress;
+  if (!body.fullName || !body.region || (address && (!address.street || !address.town))) {
+    return send(res, 400, { message: 'Validation failed' });
+  }
+  Object.assign(USERS[email], {
+    fullName: String(body.fullName).trim(),
+    region: body.region,
+    deliveryAddress: address
+      ? { street: address.street, town: address.town, gpsAddress: address.gpsAddress || null }
+      : null,
   });
+  return send(res, 200, { message: 'Profile updated successfully.', data: buyerProfile(email) });
 }
 
 async function createFarmer(req, res) {
@@ -115,8 +165,18 @@ createServer(async (req, res) => {
   if (req.method === 'POST' && url.pathname === '/api/v1/auth/login') {
     return login(req, res);
   }
+  if (req.method === 'POST' && url.pathname === '/api/v1/auth/register') {
+    return registerBuyer(req, res);
+  }
+  if (url.pathname === '/api/v1/buyer/profile') {
+    const session = await sessionFromRequest(req);
+    if (!session) return send(res, 401, { message: 'Authentication is required to access this resource.' });
+    if (session.role !== 'BUYER') return send(res, 403, { message: 'You do not have permission to access this resource.' });
+    if (req.method === 'GET') return send(res, 200, { message: 'Profile retrieved successfully.', data: buyerProfile(session.email) });
+    if (req.method === 'PUT') return updateBuyerProfile(req, res, session.email);
+  }
   if (url.pathname === '/api/v1/admin/farmers') {
-    const role = await roleFromRequest(req);
+    const role = (await sessionFromRequest(req))?.role;
     if (!role) return send(res, 401, { message: 'Authentication is required to access this resource.' });
     if (role !== 'ADMIN') return send(res, 403, { message: 'You do not have permission to access this resource.' });
     if (req.method === 'POST') return createFarmer(req, res);

@@ -5,7 +5,7 @@ import { useCallback } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { FarmerList } from '@/components/farmers/FarmerList';
 import { buttonVariants } from '@/components/ui/button';
-import { requireAdminSession, type AdminPageProps } from '@/lib/adminSession';
+import { requireAdminSession, type SessionPageProps } from '@/lib/pageSession';
 
 /** The URL uses 1-based ?page=N; the API is 0-based. Anything invalid means page 1. */
 function pageFromQuery(value: string | string[] | undefined): number {
@@ -17,7 +17,7 @@ function hrefForPage(page: number) {
   return page === 0 ? '/admin/farmers' : `/admin/farmers?page=${page + 1}`;
 }
 
-export default function FarmersPage({ adminEmail }: AdminPageProps) {
+export default function FarmersPage({ email: adminEmail }: SessionPageProps) {
   const router = useRouter();
   const page = pageFromQuery(router.query.page);
 

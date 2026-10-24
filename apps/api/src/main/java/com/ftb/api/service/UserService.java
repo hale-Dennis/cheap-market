@@ -1,6 +1,9 @@
 package com.ftb.api.service;
 
+import java.util.Locale;
 import com.ftb.api.model.User;
+import com.ftb.api.model.Address;
+import com.ftb.api.dto.request.AddressRequest;
 import com.ftb.api.model.UserRole;
 import com.ftb.api.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
@@ -45,10 +48,26 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
-        userMapper.updateUserFromDto(request, user);
+        user.setFullName(request.getFullName().trim());
+        user.setRegion(request.getRegion());
+        user.setDeliveryAddress(toAddress(request.getDeliveryAddress()));
 
         User updatedUser = userRepository.save(user);
 
         return userMapper.toBuyerProfileResponse(updatedUser);
+    }
+
+    private static Address toAddress(AddressRequest request) {
+        if (request == null) {
+            return null;
+        }
+        String gpsAddress = request.getGpsAddress() == null || request.getGpsAddress().isBlank()
+                ? null
+                : request.getGpsAddress().trim().toUpperCase(Locale.ROOT);
+        return Address.builder()
+                .street(request.getStreet().trim())
+                .town(request.getTown().trim())
+                .gpsAddress(gpsAddress)
+                .build();
     }
 }

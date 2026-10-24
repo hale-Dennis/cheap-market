@@ -81,10 +81,49 @@ class AuthenticationServiceTest {
     }
 
     @Test
+    void login_ShouldAuthenticateWithNormalisedEmail() {
+        UserDetails buyer = new User("jane@example.com", "hashed",
+                Collections.singleton(new SimpleGrantedAuthority("ROLE_BUYER")));
+        RefreshToken refreshToken = new RefreshToken();
+        refreshToken.setToken("refresh-token");
+        when(userDetailsService.loadUserByUsername("jane@example.com")).thenReturn(buyer);
+        when(jwtService.generateToken(buyer)).thenReturn("token");
+        when(refreshTokenService.createRefreshToken("jane@example.com")).thenReturn(refreshToken);
+
+        authenticationService.login(new LoginRequest("  Jane@Example.COM ", "Password123"));
+
+        verify(authenticationManager).authenticate(
+                new UsernamePasswordAuthenticationToken("jane@example.com", "Password123"));
+    }
+
+    @Test
+    void registerBuyer_ShouldCreateBuyerWithNormalisedEmailAndLogThemIn() {
+        RegisterRequest request = new RegisterRequest(" Jane Doe ", " Jane@Example.com ", "Password123", "ASHANTI");
+        com.ftb.api.model.User saved = com.ftb.api.model.User.builder()
+                .email("jane@example.com").passwordHash("hashed").role(com.ftb.api.model.UserRole.BUYER).build();
+        RefreshToken refreshToken = new RefreshToken();
+        refreshToken.setToken("refresh-token");
+        when(userRepository.existsByEmail("jane@example.com")).thenReturn(false);
+        when(userService.createUser(request, com.ftb.api.model.UserRole.BUYER)).thenReturn(saved);
+        when(jwtService.generateToken(any(UserDetails.class))).thenReturn("access-token");
+        when(refreshTokenService.createRefreshToken("jane@example.com")).thenReturn(refreshToken);
+
+        LoginResponse response = authenticationService.registerBuyer(request);
+
+        assertEquals("jane@example.com", request.getEmail());
+        assertEquals("Jane Doe", request.getFullName());
+        assertEquals("access-token", response.getAccessToken());
+        assertEquals("refresh-token", response.getRefreshToken());
+        org.mockito.ArgumentCaptor<UserDetails> details = org.mockito.ArgumentCaptor.forClass(UserDetails.class);
+        verify(jwtService).generateToken(details.capture());
+        assertTrue(details.getValue().getAuthorities().contains(new SimpleGrantedAuthority("ROLE_BUYER")));
+    }
+
+    @Test
     void registerBuyer_EmailExists_ShouldThrowConflictException() {
         // Given
-        RegisterRequest request = new RegisterRequest("New Buyer", "buyer@test.com", "Password123", "Test Region");
-        when(userRepository.existsByEmail(request.getEmail())).thenReturn(true);
+        RegisterRequest request = new RegisterRequest("New Buyer", "Buyer@Test.com", "Password123", "ASHANTI");
+        when(userRepository.existsByEmail("buyer@test.com")).thenReturn(true);
 
         // When & Then
         assertThrows(ConflictException.class, () -> authenticationService.registerBuyer(request));
