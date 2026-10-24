@@ -1,12 +1,21 @@
 services:
+  # Runs as a Node service (not a static site): login, middleware route protection
+  # and the HttpOnly session cookie all need a Next.js server.
   - type: web
     name: cheap-market-web
-    env: static
-    buildCommand: npm install && npm run build
-    staticPublishPath: apps/web/.next
+    env: node
+    buildCommand: npm ci && npm run build --workspace web
+    startCommand: npm run start --workspace web
     plan: free
+    envVars:
+      - key: API_BASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
   - type: web
     name: cheap-market-api
     env: docker
     dockerfilePath: apps/api/Dockerfile
-    plan: free 
+    dockerContext: apps/api
+    healthCheckPath: /actuator/health
+    plan: free

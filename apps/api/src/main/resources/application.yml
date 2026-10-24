@@ -11,7 +11,7 @@ spring:
   application:
     name: api
   datasource:
-    url: jdbc:postgresql://localhost:5432/cheap_market
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/cheap_market}
     username: ${DB_USER}
     password: ${DB_PASSWORD}
   jpa:
@@ -22,5 +22,8 @@ spring:
         format_sql: true
         show_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
-
-
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

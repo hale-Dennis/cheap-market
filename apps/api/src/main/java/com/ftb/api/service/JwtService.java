@@ -12,11 +12,15 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 
 @Service
 public class JwtService {
+
+    public static final String ROLE_CLAIM = "role";
+    private static final String ROLE_PREFIX = "ROLE_";
 
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
@@ -34,7 +38,13 @@ public class JwtService {
     }
 
     public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
+        Map<String, Object> claims = new HashMap<>();
+        userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(authority -> authority.startsWith(ROLE_PREFIX))
+                .findFirst()
+                .ifPresent(authority -> claims.put(ROLE_CLAIM, authority.substring(ROLE_PREFIX.length())));
+        return generateToken(claims, userDetails);
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {

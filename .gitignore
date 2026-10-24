@@ -93,3 +93,13 @@ docker-compose.override.yml
 .cursor/
 web-bundles/
 node_modules/
+# -------------------------------------
+# Next.js / Node
+# -------------------------------------
+.next/
+*.tsbuildinfo
+.env*.local
+
+# Playwright
+test-results/
+playwright-report/
