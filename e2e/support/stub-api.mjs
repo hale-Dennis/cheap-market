@@ -106,6 +106,36 @@ const DELIVERY_FEE_CENTS = 1000;
 const orders = [];
 const notifications = [];
 const ratings = [];
+const disputes = [];
+
+/** Mirrors DisputeService.createDispute: dispute, DISPUTED status and admin notification together. */
+async function createDispute(req, res, email) {
+  const body = await readJson(req);
+  const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
+  if (!body.orderId || !reason || reason.length > 500) {
+    return send(res, 400, { message: 'Validation failed: reason: Reason cannot exceed 500 characters' });
+  }
+  const order = orders.find((o) => o.id === body.orderId && o.buyerEmail === email);
+  if (!order) return send(res, 404, { message: `Order not found with id: ${body.orderId}` });
+  if (disputes.some((d) => d.orderId === order.id)) {
+    return send(res, 409, { code: 'ALREADY_DISPUTED', message: "You've already reported an issue with this order." });
+  }
+  if (order.status !== 'COMPLETED') {
+    return send(res, 422, { code: 'ORDER_NOT_COMPLETED', message: 'You can report an issue once the order is completed.' });
+  }
+  const dispute = { id: randomUUID(), orderId: order.id, status: 'OPEN', reason, createdAt: new Date().toISOString() };
+  disputes.push(dispute);
+  order.status = 'DISPUTED';
+  const preview = reason.length > 200 ? reason.slice(0, 199) + '…' : reason;
+  notifications.unshift({
+    id: randomUUID(), type: 'DISPUTE_OPENED', orderId: order.id, createdAt: dispute.createdAt, read: false,
+    message: `Issue reported on order ${order.orderNumber} by ${USERS[email].fullName}: "${preview}"`,
+  });
+  return send(res, 201, { message: 'Dispute submitted successfully.', data: dispute });
+}
+
+/** A disputed order was still delivered, so its farmers can still be rated. */
+const RATEABLE = ['COMPLETED', 'DISPUTED'];
 
 /** The distinct farmers who supplied an order, with this order's rating of each (mirrors OrderFarmerDto). */
 function orderFarmers(order) {
@@ -126,7 +156,7 @@ async function createRating(req, res, email) {
   }
   const order = orders.find((o) => o.id === body.orderId && o.buyerEmail === email);
   if (!order) return send(res, 404, { message: `Order not found with id: ${body.orderId}` });
-  if (order.status !== 'COMPLETED') {
+  if (!RATEABLE.includes(order.status)) {
     return send(res, 422, { code: 'ORDER_NOT_COMPLETED', message: 'You can rate farmers once the order is completed.' });
   }
   if (!orderFarmers(order).some((f) => f.farmerId === body.farmerId)) {
@@ -481,6 +511,24 @@ createServer(async (req, res) => {
       ? send(res, 200, { message: 'Product details retrieved successfully.', data: detail })
       : send(res, 404, { message: `Product not found with id: ${detailMatch[1]}` });
   }
+  // Test-only (not in the real API): many past orders at once, without admin notifications, so bulk
+  // seeding can't push other specs' notifications out of the dashboard's 20 most recent.
+  if (url.pathname === '/__test/orders' && req.method === 'POST') {
+    if ((await sessionFromRequest(req))?.role !== 'ADMIN') return send(res, 403, { message: 'Forbidden' });
+    const { buyerEmail, productId, count } = await readJson(req);
+    const product = products.find((p) => p.id === productId);
+    const base = Date.now() - count * 1000;
+    for (let i = 0; i < count; i++) {
+      orders.push({
+        id: randomUUID(), orderNumber: orderNumber(), buyerEmail, idempotencyKey: null, status: 'PENDING', paymentStatus: 'UNPAID',
+        items: [{ productId, name: product.name, unit: product.unit, quantity: 1, priceAtPurchaseCents: product.priceCents, lineTotalCents: product.priceCents }],
+        itemsSubtotalCents: product.priceCents, deliveryFeeCents: DELIVERY_FEE_CENTS, finalTotalCents: product.priceCents + DELIVERY_FEE_CENTS,
+        fulfillmentType: 'DELIVERY', deliveryAddress: { ...USERS[buyerEmail].deliveryAddress }, pickupLocation: null,
+        createdAt: new Date(base + i * 1000).toISOString(),
+      });
+    }
+    return send(res, 201, { message: 'Orders seeded.', data: { count } });
+  }
   if (url.pathname === '/api/v1/orders' && req.method === 'POST') {
     const session = await sessionFromRequest(req);
     if (!session) return send(res, 401, { message: 'Authentication is required to access this resource.' });
@@ -496,7 +544,7 @@ createServer(async (req, res) => {
     const content = mine.slice(page * size, (page + 1) * size).map((o) => ({
       id: o.id, orderNumber: o.orderNumber, createdAt: o.createdAt, finalTotalCents: o.finalTotalCents,
       status: o.status, fulfillmentType: o.fulfillmentType, itemCount: o.items.reduce((s, i) => s + i.quantity, 0),
-      farmersToRate: o.status === 'COMPLETED' ? orderFarmers(o).filter((f) => !f.rating) : [],
+      farmersToRate: RATEABLE.includes(o.status) ? orderFarmers(o).filter((f) => !f.rating) : [],
     }));
     return send(res, 200, { message: 'Order history retrieved successfully.', data: {
       content, currentPage: page, totalPages: Math.ceil(mine.length / size), totalElements: mine.length, size } });
@@ -517,7 +565,14 @@ createServer(async (req, res) => {
     const order = orders.find((o) => o.id === orderMatch[1] && o.buyerEmail === session.email);
     if (!order) return send(res, 404, { message: 'Order not found' });
     const { buyerEmail, idempotencyKey, ...detail } = order;
-    return send(res, 200, { message: 'Order details retrieved successfully.', data: { ...detail, farmers: orderFarmers(order) } });
+    return send(res, 200, { message: 'Order details retrieved successfully.', data: {
+      ...detail, farmers: orderFarmers(order), dispute: disputes.find((d) => d.orderId === order.id) ?? null } });
+  }
+  if (url.pathname === '/api/v1/disputes' && req.method === 'POST') {
+    const session = await sessionFromRequest(req);
+    if (!session) return send(res, 401, { message: 'Authentication is required to access this resource.' });
+    if (session.role !== 'BUYER') return send(res, 403, { message: 'You do not have permission to access this resource.' });
+    return createDispute(req, res, session.email);
   }
   if (url.pathname === '/api/v1/ratings' && req.method === 'POST') {
     const session = await sessionFromRequest(req);

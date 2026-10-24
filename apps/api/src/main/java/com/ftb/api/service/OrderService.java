@@ -27,6 +27,7 @@ import java.util.UUID;
 import java.util.LinkedHashMap;
 import java.util.stream.Collectors;
 import com.ftb.api.mapper.RatingMapper;
+import com.ftb.api.mapper.DisputeMapper;
 import com.ftb.api.dto.response.OrderFarmerDto;
 import com.ftb.api.dto.response.OrderSummaryResponseDto;
 import com.ftb.api.dto.response.PaginatedResponse;
@@ -49,6 +50,8 @@ public class OrderService {
     private final RatingRepository ratingRepository;
     private final OrderItemRepository orderItemRepository;
     private final RatingMapper ratingMapper;
+    private final DisputeRepository disputeRepository;
+    private final DisputeMapper disputeMapper;
 
     /** Error codes returned when an order can't be placed. */
     public static final String EMPTY_CART = "EMPTY_CART";
@@ -187,11 +190,11 @@ public class OrderService {
                 .filter(o -> o.getBuyer().getEmail().equals(buyerEmail))
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
-        return withFarmers(order);
+        return withFarmersAndDispute(order);
     }
 
-    /** The confirmation plus each farmer in the order and the buyer's rating of them, if given. */
-    private OrderConfirmationResponse withFarmers(Order order) {
+    /** The confirmation plus each farmer in the order with the buyer's rating of them, and any reported issue. */
+    private OrderConfirmationResponse withFarmersAndDispute(Order order) {
         Map<UUID, Rating> ratingsByFarmer = ratingRepository.findByOrderId(order.getId()).stream()
                 .collect(Collectors.toMap(rating -> rating.getFarmer().getId(), rating -> rating));
         Map<UUID, User> farmers = new LinkedHashMap<>();
@@ -206,6 +209,8 @@ public class OrderService {
                                 .map(ratingMapper::toRatingResponseDto).orElse(null))
                         .build())
                 .toList());
+        response.setDispute(disputeRepository.findByOrderId(order.getId())
+                .map(disputeMapper::toDisputeResponseDto).orElse(null));
         return response;
     }
 
@@ -277,6 +282,6 @@ public class OrderService {
         Order order = orderRepository.findWithDetailsById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
-        return withFarmers(order);
+        return withFarmersAndDispute(order);
     }
 }

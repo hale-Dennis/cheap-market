@@ -178,6 +178,7 @@ describe('Order detail', () => {
       pickupLocation: null,
       createdAt: '2026-10-24T14:30:00Z',
       farmers: [],
+      dispute: null,
     } satisfies OrderDetail);
     render(<OrderConfirmation orderId="order-1" variant="detail" />, { wrapper });
 

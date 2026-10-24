@@ -11,7 +11,7 @@ import {
   markNotificationRead,
 } from '@/services/notificationService';
 
-/** Checked every minute so new orders show up without reloading. */
+/** Checked every minute so new orders and disputes show up without reloading. */
 const REFRESH_MS = 60_000;
 
 function timeAgo(iso: string, now = Date.now()) {
@@ -23,7 +23,7 @@ function timeAgo(iso: string, now = Date.now()) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
-/** New-order notifications for admins, newest first. */
+/** New-order and dispute notifications for admins, newest first. */
 export function NotificationsPanel() {
   const { data, error, mutate } = useSWR('admin/notifications', getAdminNotifications, {
     refreshInterval: REFRESH_MS,
@@ -63,7 +63,9 @@ export function NotificationsPanel() {
         )}
         {!error && !data && <p className="text-sm text-muted-foreground">Loading…</p>}
         {data?.notifications.length === 0 && (
-          <p className="text-sm text-muted-foreground">No notifications yet. New orders will appear here.</p>
+          <p className="text-sm text-muted-foreground">
+            No notifications yet. New orders and reported issues will appear here.
+          </p>
         )}
         {data && data.notifications.length > 0 && (
           <ul className="divide-y" aria-label="Recent notifications">
@@ -72,6 +74,11 @@ export function NotificationsPanel() {
                 <div className="min-w-0">
                   <p className={cn('text-sm', !notification.read && 'font-semibold')}>
                     {!notification.read && <span className="sr-only">Unread: </span>}
+                    {notification.type === 'DISPUTE_OPENED' && (
+                      <span className="mr-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-900">
+                        Dispute<span className="sr-only">:</span>
+                      </span>
+                    )}
                     {notification.message}
                   </p>
                   <p className="text-xs text-muted-foreground">{timeAgo(notification.createdAt)}</p>

@@ -30,4 +30,6 @@ public class OrderConfirmationResponse {
     private Instant createdAt;
     /** Each farmer in the order, with the buyer's rating of them if given. */
     private List<OrderFarmerDto> farmers;
+    /** The issue the buyer reported, if any. */
+    private DisputeResponseDto dispute;
 }

@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { scanWcag } from './support/a11y';
 
-import { seedCategory, seedFarmer, seedListing, setOrderStatus } from './support/api';
+import { seedCategory, seedFarmer, seedListing, seedOrders, setOrderStatus } from './support/api';
 
 // This spec owns the BONO_EAST region in the shared stub. Each test signs up its own buyer.
 test.describe.configure({ mode: 'serial' });
@@ -19,9 +19,10 @@ test.describe('My orders', () => {
   });
 
   async function signUpBuyer(page: Page) {
+    const email = `history.${randomUUID().slice(0, 8)}@example.com`;
     await page.goto('/signup');
     await page.getByLabel('Full name').fill('History Buyer');
-    await page.getByLabel('Email').fill(`history.${randomUUID().slice(0, 8)}@example.com`);
+    await page.getByLabel('Email').fill(email);
     await page.getByLabel('Home region').selectOption({ label: 'Bono East' });
     await page.getByLabel('Password', { exact: true }).fill('Password123');
     await page.getByLabel('Confirm password').fill('Password123');
@@ -31,6 +32,7 @@ test.describe('My orders', () => {
     await page.getByLabel('Town / city').fill('Techiman');
     await page.getByRole('button', { name: 'Save changes' }).click();
     await expect(page.getByText('Your profile has been saved.')).toBeVisible();
+    return email;
   }
 
   /** Places a home-delivery order through the API (as the checkout does) and returns its id and number. */
@@ -81,10 +83,7 @@ test.describe('My orders', () => {
   });
 
   test('infinite scroll loads more than two pages of orders', async ({ page }) => {
-    await signUpBuyer(page);
-    for (let i = 0; i < 25; i++) {
-      await placeOrder(page, 1);
-    }
+    await seedOrders(await signUpBuyer(page), productId, 25);
 
     // A short window, so the first page fills it and the end of the list starts off-screen.
     await page.setViewportSize({ width: 1280, height: 500 });

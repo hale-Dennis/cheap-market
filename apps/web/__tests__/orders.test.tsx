@@ -49,6 +49,7 @@ const DELIVERY_ORDER: OrderDetail = {
   pickupLocation: null,
   createdAt: '2026-10-24T14:30:00Z',
   farmers: [{ farmerId: 'f-1', fullName: 'Ama Mensah', rating: null }],
+  dispute: null,
 };
 
 describe('OrderConfirmation', () => {
@@ -148,7 +149,7 @@ describe('NotificationsPanel', () => {
     mocked.list.mockResolvedValue({ unreadCount: 0, notifications: [] });
     render(<NotificationsPanel />, { wrapper });
 
-    expect(await screen.findByText('No notifications yet. New orders will appear here.')).toBeInTheDocument();
+    expect(await screen.findByText('No notifications yet. New orders and reported issues will appear here.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Mark all as read' })).not.toBeInTheDocument();
   });
 });

@@ -80,6 +80,14 @@ export function seedPickupLocation(name: string, region: string) {
   });
 }
 
+/**
+ * Test-only: gives a buyer `count` past orders of one product directly in the stub, without the
+ * admin notifications real orders create (bulk seeding would push other specs' notifications out of view).
+ */
+export function seedOrders(buyerEmail: string, productId: string, count: number) {
+  return stubRequest('/__test/orders', { method: 'POST', body: JSON.stringify({ buyerEmail, productId, count }) });
+}
+
 /** Sets an order's status as an admin would (PATCH /admin/orders/{id}/status). */
 export function setOrderStatus(orderId: string, status: string) {
   return stubRequest(`/api/v1/admin/orders/${orderId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });

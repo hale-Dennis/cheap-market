@@ -21,7 +21,7 @@ public class OrderSummaryResponseDto {
     private FulfillmentType fulfillmentType;
     /** Total quantity across the order's items. */
     private int itemCount;
-    /** Farmers the buyer can still rate (completed orders only); empty otherwise. */
+    /** Farmers the buyer can still rate (completed or disputed orders); empty otherwise. */
     @Builder.Default
     private List<OrderFarmerDto> farmersToRate = List.of();
 }

@@ -1,5 +1,6 @@
 import type { Address } from './buyer';
 import type { FulfillmentType, PickupLocation } from './checkout';
+import type { Dispute } from './dispute';
 import type { Rating } from './rating';
 
 export type OrderStatus = 'PENDING' | 'READY_FOR_PICKUP' | 'OUT_FOR_DELIVERY' | 'COMPLETED' | 'DISPUTED';
@@ -46,6 +47,8 @@ export interface OrderDetail {
   createdAt: string;
   /** Each farmer who supplied the order, with the buyer's rating of them if given. */
   farmers: OrderFarmer[];
+  /** The issue the buyer reported, if any. */
+  dispute: Dispute | null;
 }
 
 /** A farmer in an order (see OrderFarmerDto.java). */
@@ -67,7 +70,7 @@ export type PlaceOrderErrorCode =
 /** An admin notification (see NotificationResponse.java). */
 export interface AdminNotification {
   id: string;
-  type: 'NEW_ORDER';
+  type: 'NEW_ORDER' | 'DISPUTE_OPENED';
   message: string;
   orderId: string | null;
   createdAt: string;
@@ -90,6 +93,6 @@ export interface OrderSummary {
   fulfillmentType: FulfillmentType;
   /** Total quantity across the order's items. */
   itemCount: number;
-  /** Farmers the buyer can still rate; empty unless the order is completed. */
+  /** Farmers the buyer can still rate; empty unless the order is completed (or disputed). */
   farmersToRate: OrderFarmer[];
 }

@@ -31,8 +31,17 @@ public class AdminNotifier {
 
     @Transactional
     public void notifyNewOrder(UUID orderId, String message) {
+        notify(NotificationType.NEW_ORDER, orderId, message);
+    }
+
+    @Transactional
+    public void notifyDisputeOpened(UUID orderId, String message) {
+        notify(NotificationType.DISPUTE_OPENED, orderId, message);
+    }
+
+    private void notify(NotificationType type, UUID orderId, String message) {
         notificationRepository.save(Notification.builder()
-                .type(NotificationType.NEW_ORDER)
+                .type(type)
                 .orderId(orderId)
                 .message(message)
                 .build());

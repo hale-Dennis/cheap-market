@@ -24,12 +24,12 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, UUID> {
         String getFullName();
     }
 
-    /** For a page of orders, the farmers still waiting for a rating (completed orders only), in one query. */
+    /** For a page of orders, the farmers still waiting for a rating (completed or disputed orders), in one query. */
     @Query("""
             select distinct o.id as orderId, f.id as farmerId, f.fullName as fullName
             from OrderItem oi join oi.order o join oi.product p join p.farmer f
             where o.id in :orderIds
-              and o.status = com.ftb.api.model.OrderStatus.COMPLETED
+              and o.status in (com.ftb.api.model.OrderStatus.COMPLETED, com.ftb.api.model.OrderStatus.DISPUTED)
               and not exists (select r.id from Rating r where r.order = o and r.farmer = f)
             order by f.fullName""")
     List<UnratedFarmer> findUnratedFarmers(Collection<UUID> orderIds);

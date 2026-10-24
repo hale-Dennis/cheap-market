@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Rating farmers against real PostgreSQL (DB_URL): one rating per farmer per order, and the farmer's average. */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({RatingService.class, RatingMapperImpl.class, OrderService.class, OrderMapperImpl.class,
+@Import({RatingService.class, RatingMapperImpl.class, com.ftb.api.mapper.DisputeMapperImpl.class, OrderService.class, OrderMapperImpl.class,
         DeliveryFeeService.class, AdminNotifier.class, RatingPersistenceTest.Config.class})
 class RatingPersistenceTest {
 

@@ -26,15 +26,15 @@ public class Dispute {
     @JoinColumn(name = "order_id", nullable = false, unique = true)
     private Order order;
 
-    @Lob
-    @Column(nullable = false)
+    /** The buyer's description of the problem. */
+    @Column(nullable = false, length = 500)
     private String reason;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private DisputeStatus status;
 
-    @Lob
+    @Column(length = 1000)
     private String resolutionNotes;
 
     @CreationTimestamp
