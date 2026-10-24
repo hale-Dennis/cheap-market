@@ -13,7 +13,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import com.ftb.api.dto.response.PaginatedResponse;
 import com.ftb.api.dto.request.CreateFarmerRequest;
-import org.springframework.data.web.PageableDefault;
+import org.springframework.data.domain.Sort;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.UUID;
@@ -23,6 +26,12 @@ import java.util.UUID;
 @RequestMapping("/api/v1/admin/farmers")
 @RequiredArgsConstructor
 public class FarmerController {
+
+    static final int DEFAULT_PAGE_SIZE = 20;
+    static final int MAX_PAGE_SIZE = 100;
+    // Fixed, total ordering so pages never overlap or skip farmers.
+    static final Sort FARMER_ORDER = Sort.by(
+            Sort.Order.desc("createdAt"), Sort.Order.asc("fullName"), Sort.Order.asc("id"));
 
     private final FarmerService farmerService;
 
@@ -35,16 +44,22 @@ public class FarmerController {
     }
 
     /**
-     * Retrieves a paginated list of all registered farmers.
+     * Retrieves a page of registered farmers, newest first.
      * Accessible only by users with the 'ADMIN' role.
-     * @param pageable Automatically populated by Spring from request params (?page, ?size, ?sort).
+     * @param page Zero-based page number.
+     * @param size Page size, 1 to {@value #MAX_PAGE_SIZE}.
      * @return A ResponseEntity containing the paginated list of farmers.
      */
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PaginatedResponse<FarmerResponse>>> getAllFarmers(
-            @PageableDefault(size = 20) Pageable pageable
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "must be 0 or greater") int page,
+            @RequestParam(defaultValue = "" + DEFAULT_PAGE_SIZE)
+            @Min(value = 1, message = "must be at least 1")
+            @Max(value = MAX_PAGE_SIZE, message = "must be at most " + MAX_PAGE_SIZE) int size
     ) {
+        Pageable pageable = PageRequest.of(page, size, FARMER_ORDER);
 
         PaginatedResponse<FarmerResponse> paginatedResponse = farmerService.getAllFarmers(pageable);
         return ResponseHandler.successResponse("Successfully retrieved farmer list.", HttpStatus.OK, paginatedResponse);

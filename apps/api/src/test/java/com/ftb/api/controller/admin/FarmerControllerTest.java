@@ -4,6 +4,11 @@ import java.util.UUID;
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verifyNoInteractions;
 import com.ftb.api.config.SecurityConfig;
 import com.ftb.api.service.JwtService;
@@ -215,12 +220,59 @@ class FarmerControllerTest {
                 .build();
         when(farmerService.getAllFarmers(any(Pageable.class))).thenReturn(paginatedResponse);
 
-        mockMvc.perform(get("/api/v1/admin/farmers?page=0&size=20"))
+        mockMvc.perform(get("/api/v1/admin/farmers"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value("Successfully retrieved farmer list."))
                 .andExpect(jsonPath("$.data.currentPage").value(0))
                 .andExpect(jsonPath("$.data.totalElements").value(1));
+
+        ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+        verify(farmerService).getAllFarmers(pageable.capture());
+        assertEquals(0, pageable.getValue().getPageNumber());
+        assertEquals(20, pageable.getValue().getPageSize());
+        assertEquals(FarmerController.FARMER_ORDER, pageable.getValue().getSort());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void getAllFarmers_WithPageAndSize_ShouldRequestThatPage() throws Exception {
+        when(farmerService.getAllFarmers(any(Pageable.class))).thenReturn(new PaginatedResponse<>());
+
+        mockMvc.perform(get("/api/v1/admin/farmers?page=3&size=100"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+        verify(farmerService).getAllFarmers(pageable.capture());
+        assertEquals(3, pageable.getValue().getPageNumber());
+        assertEquals(100, pageable.getValue().getPageSize());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "page=-1, page: must be 0 or greater",
+            "size=0, size: must be at least 1",
+            "size=101, size: must be at most 100",
+            "page=abc, Invalid value 'abc' for parameter 'page'.",
+            "size=ten, Invalid value 'ten' for parameter 'size'."
+    })
+    @WithMockUser(roles = "ADMIN")
+    void getAllFarmers_InvalidPagingParams_ShouldReturn400(String query, String expectedMessage) throws Exception {
+        mockMvc.perform(get("/api/v1/admin/farmers?" + query))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString(expectedMessage)));
+
+        verifyNoInteractions(farmerService);
+    }
+
+    @Test
+    @WithMockUser(roles = "BUYER")
+    void getAllFarmers_NotAdmin_ShouldReturn403() throws Exception {
+        mockMvc.perform(get("/api/v1/admin/farmers"))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(farmerService);
     }
 
     @Test

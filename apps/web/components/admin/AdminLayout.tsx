@@ -42,9 +42,9 @@ export function AdminLayout({ title, adminEmail, children }: AdminLayoutProps) {
       <div className="min-h-screen bg-muted">
         <header className="border-b bg-background">
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-            <div className="flex items-center gap-6">
-              <Link href="/admin" className="font-semibold text-primary">
-                Cheap Market Admin
+            <div className="flex items-center gap-4 sm:gap-6">
+              <Link href="/admin" className="whitespace-nowrap font-semibold text-primary">
+                Cheap Market<span className="hidden sm:inline"> Admin</span>
               </Link>
               <nav aria-label="Admin" className="flex gap-4 text-sm">
                 {NAV_ITEMS.map((item) => (
