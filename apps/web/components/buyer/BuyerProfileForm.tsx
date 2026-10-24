@@ -29,7 +29,10 @@ export function BuyerProfileForm({ profile, onSaved }: BuyerProfileFormProps) {
     formState: { errors, isSubmitting, isDirty },
   } = useForm<BuyerProfileFormValues>({
     resolver: zodResolver(buyerProfileSchema),
-    mode: 'onTouched',
+    // Validate on submit, then live as fields are corrected. (Validating on blur shows errors
+    // mid-click, which shifts the submit button so the click can miss it.)
+    mode: 'onSubmit',
+    reValidateMode: 'onChange',
     defaultValues: profileToFormValues(profile),
   });
 

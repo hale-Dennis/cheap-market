@@ -17,7 +17,9 @@ FROM eclipse-temurin:21-jre
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/* \
-    && useradd --system --create-home --uid 1001 spring
+    && useradd --system --create-home --uid 1001 spring \
+    && mkdir -p /app/uploads \
+    && chown spring /app/uploads
 
 WORKDIR /app
 COPY --from=build /app/target/api-0.0.1-SNAPSHOT.jar app.jar

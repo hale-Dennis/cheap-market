@@ -25,7 +25,10 @@ export function CreateFarmerForm({ onCreated }: CreateFarmerFormProps) {
     formState: { errors, isSubmitting },
   } = useForm<CreateFarmerFormValues>({
     resolver: zodResolver(createFarmerSchema),
-    mode: 'onTouched',
+    // Validate on submit, then live as fields are corrected. (Validating on blur shows errors
+    // mid-click, which shifts the submit button so the click can miss it.)
+    mode: 'onSubmit',
+    reValidateMode: 'onChange',
     defaultValues: { fullName: '', email: '', phoneNumber: '', region: '' },
   });
 

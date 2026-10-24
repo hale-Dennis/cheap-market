@@ -13,6 +13,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import com.ftb.api.service.storage.ImageStorageException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.security.access.AccessDeniedException;
@@ -74,6 +78,32 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
         String message = "Invalid value '" + ex.getValue() + "' for parameter '" + ex.getName() + "'.";
         return ResponseHandler.errorResponse(message, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiResponse<Object>> handleBadRequestException(BadRequestException ex) {
+        return ResponseHandler.errorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Object>> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException ex) {
+        return ResponseHandler.errorResponse("Each image must be 2 MB or smaller, and at most 5 images can be uploaded at once.", HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ApiResponse<Object>> handleMissingServletRequestPart(MissingServletRequestPartException ex) {
+        return ResponseHandler.errorResponse("Required file part '" + ex.getRequestPartName() + "' is missing.", HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<ApiResponse<Object>> handleMultipartException(MultipartException ex) {
+        return ResponseHandler.errorResponse("The request must be a multipart file upload.", HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ImageStorageException.class)
+    public ResponseEntity<ApiResponse<Object>> handleImageStorageException(ImageStorageException ex) {
+        log.error("Image storage failed", ex);
+        return ResponseHandler.errorResponse(ex.getMessage(), HttpStatus.BAD_GATEWAY);
     }
 
     @ExceptionHandler(InvalidRequestException.class)

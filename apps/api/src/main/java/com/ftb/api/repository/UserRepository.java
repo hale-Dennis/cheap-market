@@ -49,6 +49,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      */
     Optional<User> findByEmail(String email);
 
+    /** Whether a user with this id has the given role (e.g. to check an id refers to a farmer). */
+    boolean existsByIdAndRole(UUID id, UserRole role);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<User> findById(UUID id);
 }
