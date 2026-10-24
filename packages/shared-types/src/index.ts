@@ -5,5 +5,6 @@ export * from './cart';
 export * from './category';
 export * from './checkout';
 export * from './farmer';
+export * from './order';
 export * from './product';
 export * from './regions';

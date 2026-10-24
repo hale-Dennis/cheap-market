@@ -5,6 +5,8 @@ import com.ftb.api.model.Order;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 
@@ -24,4 +26,13 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
      * @return true if at least one order references the location, false otherwise.
      */
     boolean existsByPickupLocationId(UUID pickupLocationId);
+
+    boolean existsByOrderNumber(String orderNumber);
+
+    /** The order a buyer already placed for this checkout attempt, if any. */
+    Optional<Order> findByBuyerIdAndIdempotencyKey(UUID buyerId, String idempotencyKey);
+
+    /** An order with everything the confirmation page shows, in one query. */
+    @EntityGraph(attributePaths = {"buyer", "items", "items.product", "pickupLocation"})
+    Optional<Order> findWithDetailsById(UUID id);
 }

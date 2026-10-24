@@ -82,7 +82,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ApiResponse<Object>> handleBadRequestException(BadRequestException ex) {
-        return ResponseHandler.errorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+        return ResponseHandler.errorResponse(ex.getCode(), ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)

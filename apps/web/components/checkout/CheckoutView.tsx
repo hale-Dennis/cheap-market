@@ -1,5 +1,7 @@
 import Link from 'next/link';
-import { useState, type FormEvent } from 'react';
+import { useRouter } from 'next/router';
+import { useRef, useState, type FormEvent } from 'react';
+import { useSWRConfig } from 'swr';
 import { toast } from 'sonner';
 import { regionName } from '@cheap-market/shared-types';
 
@@ -8,18 +10,23 @@ import { FulfillmentSelector } from '@/components/checkout/FulfillmentSelector';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
-import { useCart } from '@/hooks/useCart';
+import { CART_KEY, useCart } from '@/hooks/useCart';
 import { useDeliveryFee, usePickupLocations } from '@/hooks/useCheckout';
 import { checkoutTotals, selectionError, type FulfillmentSelection } from '@/lib/checkout';
+import { newIdempotencyKey } from '@/lib/idempotency';
 import { parseRegion } from '@/lib/region';
 import { ApiError } from '@/services/apiClient';
+import { placeOrder } from '@/services/orderService';
 
-interface CheckoutViewProps {
-  /** Called with a complete, valid selection. */
-  onPlaceOrder: (selection: FulfillmentSelection) => Promise<void> | void;
-}
+/** Errors after which the cart has changed on the server and should be reloaded. */
+const CART_CHANGED = new Set(['EMPTY_CART', 'UNAVAILABLE_ITEMS']);
 
-export function CheckoutView({ onPlaceOrder }: CheckoutViewProps) {
+export function CheckoutView() {
+  const router = useRouter();
+  const { mutate } = useSWRConfig();
+  // One key per checkout visit, reused if the buyer retries, so a repeat can't create a second order.
+  const idempotencyKey = useRef<string | null>(null);
+  idempotencyKey.current ??= newIdempotencyKey();
   const cart = useCart(true);
   const profile = useBuyerProfile();
   const region = parseRegion(profile.data?.region);
@@ -89,8 +96,22 @@ export function CheckoutView({ onPlaceOrder }: CheckoutViewProps) {
     }
     setSubmitting(true);
     try {
-      await onPlaceOrder(selection);
-    } finally {
+      const placed = await placeOrder(
+        {
+          fulfillmentType: selection.type!,
+          pickupLocationId: selection.type === 'PICKUP' ? selection.pickupLocationId! : undefined,
+        },
+        idempotencyKey.current!,
+      );
+      await router.push(`/orders/confirmation?orderId=${encodeURIComponent(placed.orderId)}`);
+      // The order emptied the cart on the server; update the header and cart page.
+      await mutate(CART_KEY);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Could not place your order. Please try again.';
+      toast.error(message);
+      if (err instanceof ApiError && err.code && CART_CHANGED.has(err.code)) {
+        await mutate(CART_KEY);
+      }
       setSubmitting(false);
     }
   }

@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.data.domain.Pageable;
 import com.ftb.api.dto.request.PlaceOrderRequest;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.constraints.Pattern;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,13 +28,29 @@ public class OrderController {
 
     private final OrderService orderService;
 
+    /**
+     * Places an order from the buyer's cart. Send the same {@code Idempotency-Key} when retrying a checkout:
+     * a repeat returns the original order (200, {@code duplicate: true}) instead of creating another.
+     */
     @PostMapping
     public ResponseEntity<ApiResponse<PlaceOrderResponseDto>> placeOrder(
             Authentication authentication,
+            @RequestHeader(name = "Idempotency-Key", required = false)
+            @Pattern(regexp = "^[A-Za-z0-9-]{8,64}$", message = "must be 8–64 letters, digits or dashes") String idempotencyKey,
             @Valid @RequestBody PlaceOrderRequest request
     ) {
-        UUID newOrderId = orderService.placeOrder(authentication.getName(), request);
-        return ResponseHandler.successResponse("Order placed successfully.", HttpStatus.CREATED, new PlaceOrderResponseDto(newOrderId));
+        OrderService.PlacedOrder placed;
+        try {
+            placed = orderService.placeOrder(authentication.getName(), request, idempotencyKey);
+        } catch (DataIntegrityViolationException ex) {
+            // A simultaneous request with the same key won the race; return the order it created.
+            if (idempotencyKey == null) throw ex;
+            placed = orderService.findPlacedOrder(authentication.getName(), idempotencyKey).orElseThrow(() -> ex);
+        }
+        PlaceOrderResponseDto body = new PlaceOrderResponseDto(placed.orderId(), placed.orderNumber(), placed.duplicate());
+        return placed.duplicate()
+                ? ResponseHandler.successResponse("This order was already placed.", HttpStatus.OK, body)
+                : ResponseHandler.successResponse("Order placed successfully.", HttpStatus.CREATED, body);
     }
 
     @GetMapping("/{orderId}")

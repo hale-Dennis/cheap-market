@@ -18,12 +18,24 @@ import org.hibernate.annotations.CreationTimestamp;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "orders")
+@Table(name = "orders", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_orders_order_number", columnNames = "order_number"),
+        // A buyer's retry of the same checkout (same Idempotency-Key) must not create a second order.
+        @UniqueConstraint(name = "uk_orders_buyer_idempotency_key", columnNames = {"buyer_id", "idempotency_key"})
+})
 public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    /** Short reference shown to buyers and admins, e.g. CM-7K3F9Q2X. */
+    @Column(name = "order_number", length = 16)
+    private String orderNumber;
+
+    /** Client-supplied key identifying one checkout attempt; null when the client sent none. */
+    @Column(name = "idempotency_key", length = 64)
+    private String idempotencyKey;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "buyer_id", nullable = false)

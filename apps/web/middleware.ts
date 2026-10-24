@@ -6,9 +6,9 @@ import { homeForRole, roleForPath } from '@/lib/roles';
 /** Where unauthenticated visitors are sent for each protected area. */
 const SIGN_IN_PAGE = { ADMIN: '/login', BUYER: '/signup' } as const;
 
-/** Someone opening their cart most likely already has an account, so offer sign-in there. */
+/** Someone opening their cart or orders most likely already has an account, so offer sign-in there. */
 function signInPageFor(pathname: string, role: keyof typeof SIGN_IN_PAGE) {
-  return pathname === '/cart' ? '/login' : SIGN_IN_PAGE[role];
+  return pathname === '/cart' || pathname.startsWith('/orders') ? '/login' : SIGN_IN_PAGE[role];
 }
 
 export async function middleware(request: NextRequest) {
@@ -47,5 +47,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/buyer/:path*', '/cart', '/checkout', '/login', '/signup'],
+  matcher: ['/admin/:path*', '/buyer/:path*', '/cart', '/checkout', '/orders/:path*', '/login', '/signup'],
 };

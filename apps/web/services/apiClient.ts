@@ -4,6 +4,8 @@ export class ApiError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    /** The API's machine-readable error code, e.g. EMPTY_CART, when it sends one. */
+    readonly code?: string,
   ) {
     super(message);
   }
@@ -42,6 +44,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     throw new ApiError(
       body?.message ?? 'Something went wrong. Please try again.',
       response.status,
+      (body as { code?: string } | null)?.code,
     );
   }
   return body?.data as T;

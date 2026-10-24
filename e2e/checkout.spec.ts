@@ -72,7 +72,7 @@ test.describe('Checkout', () => {
     await expect(total(page)).toHaveText('GH₵ 50.00');
 
     await page.getByRole('button', { name: 'Place order' }).click();
-    await expect(page.getByText('Your choice is saved. Placing orders is coming soon.')).toBeVisible();
+    await expect(page).toHaveURL(/\/orders\/confirmation\?orderId=/);
   });
 
   test('continuing without a choice shows an error', async ({ page }) => {
