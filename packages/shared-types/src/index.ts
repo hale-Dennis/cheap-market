@@ -3,6 +3,7 @@ export * from './auth';
 export * from './buyer';
 export * from './cart';
 export * from './category';
+export * from './checkout';
 export * from './farmer';
 export * from './product';
 export * from './regions';

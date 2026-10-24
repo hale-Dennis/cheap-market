@@ -14,5 +14,5 @@ public interface PickupLocationRepository extends JpaRepository<PickupLocation, 
      * @param region The region to filter by.
      * @return A list of matching PickupLocation entities.
      */
-    List<PickupLocation> findByRegion(String region);
+    List<PickupLocation> findByRegionOrderByNameAsc(String region);
 }

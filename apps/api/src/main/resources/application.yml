@@ -7,6 +7,12 @@ application:
       secret-key: ${JWT_SECRET}
       expiration: 3600000
       refresh-token-expiration: 604800000
+  delivery:
+    # Flat home-delivery fee, in pesewas (GH₵ 1 = 100). Override per region by region code, e.g.
+    #   fee-cents-by-region:
+    #     GREATER_ACCRA: 1500
+    default-fee-cents: ${DELIVERY_DEFAULT_FEE_CENTS:1000}
+    fee-cents-by-region: {}
   storage:
     # Set CLOUDINARY_URL (cloudinary://key:secret@cloud) to store images in Cloudinary.
     # Without it, images are written to UPLOAD_DIR and served from /api/v1/media (local development only).

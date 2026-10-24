@@ -37,6 +37,7 @@ public class OrderService {
     private final UserRepository userRepository;
     private final PickupLocationRepository pickupLocationRepository;
     private final OrderMapper orderMapper;
+    private final DeliveryFeeService deliveryFeeService;
 
     @Transactional
     public UUID placeOrder(String buyerEmail, PlaceOrderRequest request) {
@@ -68,7 +69,10 @@ public class OrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         order.setItemsSubtotal(subtotal);
 
-        BigDecimal deliveryFee = request.getFulfillmentType() == FulfillmentType.DELIVERY ? new BigDecimal("10.00") : BigDecimal.ZERO;
+        // Same fee the checkout page quoted (DeliveryFeeService), based on the buyer's region.
+        BigDecimal deliveryFee = request.getFulfillmentType() == FulfillmentType.DELIVERY
+                ? deliveryFeeService.feeFor(buyer.getRegion())
+                : BigDecimal.ZERO;
         order.setDeliveryFee(deliveryFee);
         order.setFinalTotal(subtotal.add(deliveryFee));
         order.setFulfillmentType(request.getFulfillmentType());
