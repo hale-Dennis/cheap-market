@@ -1,5 +1,4 @@
 import type { GetServerSideProps } from 'next';
-import { toast } from 'sonner';
 
 import { CheckoutView } from '@/components/checkout/CheckoutView';
 import { PublicLayout, type PublicSession } from '@/components/PublicLayout';
@@ -13,12 +12,7 @@ export default function CheckoutPage({ session }: CheckoutPageProps) {
   return (
     <PublicLayout title="Checkout" session={session}>
       <h1 className="mb-6 text-2xl font-bold tracking-tight sm:text-3xl">Checkout</h1>
-      <CheckoutView
-        onPlaceOrder={() => {
-          // Story 3.3 wires this to POST /orders and the confirmation page.
-          toast.info('Your choice is saved. Placing orders is coming soon.');
-        }}
-      />
+      <CheckoutView />
     </PublicLayout>
   );
 }

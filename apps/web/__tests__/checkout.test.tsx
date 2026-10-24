@@ -10,6 +10,8 @@ import { checkoutTotals, selectionError } from '../lib/checkout';
 import { getBuyerProfile } from '../services/buyerService';
 import { getCart } from '../services/cartService';
 import { getDeliveryFee, listPickupLocations } from '../services/checkoutService';
+import { ApiError } from '../services/apiClient';
+import { placeOrder } from '../services/orderService';
 
 jest.mock('../services/cartService', () => ({
   getCart: jest.fn(),
@@ -19,13 +21,17 @@ jest.mock('../services/cartService', () => ({
 }));
 jest.mock('../services/buyerService', () => ({ getBuyerProfile: jest.fn(), updateBuyerProfile: jest.fn() }));
 jest.mock('../services/checkoutService', () => ({ getDeliveryFee: jest.fn(), listPickupLocations: jest.fn() }));
+jest.mock('../services/orderService', () => ({ placeOrder: jest.fn(), getOrder: jest.fn() }));
 jest.mock('sonner', () => ({ toast: { success: jest.fn(), error: jest.fn(), info: jest.fn() } }));
+const mockPush = jest.fn().mockResolvedValue(true);
+jest.mock('next/router', () => ({ useRouter: () => ({ push: mockPush }) }));
 
 const mocked = {
   cart: getCart as jest.MockedFunction<typeof getCart>,
   profile: getBuyerProfile as jest.MockedFunction<typeof getBuyerProfile>,
   fee: getDeliveryFee as jest.MockedFunction<typeof getDeliveryFee>,
   pickups: listPickupLocations as jest.MockedFunction<typeof listPickupLocations>,
+  place: placeOrder as jest.MockedFunction<typeof placeOrder>,
 };
 const { toast } = jest.requireMock('sonner') as { toast: { error: jest.Mock } };
 
@@ -80,10 +86,10 @@ function setUp({
   mocked.profile.mockResolvedValue(profile);
   mocked.fee.mockResolvedValue({ region: 'VOLTA', feeCents: 1000 });
   mocked.pickups.mockResolvedValue(pickups);
-  const onPlaceOrder = jest.fn();
+  mocked.place.mockResolvedValue({ orderId: 'order-1', orderNumber: 'CM-ABCDEFGH', duplicate: false });
   const user = userEvent.setup();
-  render(<CheckoutView onPlaceOrder={onPlaceOrder} />, { wrapper });
-  return { onPlaceOrder, user };
+  render(<CheckoutView />, { wrapper });
+  return { user };
 }
 
 const total = () => screen.getByText('Total').nextElementSibling;
@@ -92,6 +98,7 @@ const deliveryLine = () => screen.getByText(/^(Delivery|Pickup)$/).nextElementSi
 beforeEach(() => {
   Object.values(mocked).forEach((fn) => fn.mockReset());
   toast.error.mockReset();
+  mockPush.mockClear();
 });
 
 describe('checkout helpers', () => {
@@ -135,7 +142,7 @@ describe('CheckoutView', () => {
   });
 
   it('pickup is free and lets the buyer choose a location in their region', async () => {
-    const { user, onPlaceOrder } = setUp();
+    const { user } = setUp();
     await waitFor(() => expect(screen.getByLabelText(/Collect from a pickup point/)).toBeEnabled());
 
     await user.click(screen.getByLabelText(/Collect from a pickup point/));
@@ -146,7 +153,8 @@ describe('CheckoutView', () => {
     expect(total()).toHaveTextContent('GH₵ 100.00');
 
     await user.click(screen.getByRole('button', { name: 'Place order' }));
-    expect(onPlaceOrder).toHaveBeenCalledWith({ type: 'PICKUP', pickupLocationId: 'loc-ho' });
+    expect(mocked.place).toHaveBeenCalledWith({ fulfillmentType: 'PICKUP', pickupLocationId: 'loc-ho' }, expect.any(String));
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/orders/confirmation?orderId=order-1'));
   });
 
   it('switching between options recalculates the total', async () => {
@@ -161,14 +169,14 @@ describe('CheckoutView', () => {
   });
 
   it('shows an error instead of continuing without a choice', async () => {
-    const { user, onPlaceOrder } = setUp();
+    const { user } = setUp();
     await screen.findByLabelText(/Home delivery/);
 
     await user.click(screen.getByRole('button', { name: 'Place order' }));
 
     expect(screen.getByRole('alert')).toHaveTextContent('Choose home delivery or a pickup point.');
     expect(toast.error).toHaveBeenCalledWith('Choose home delivery or a pickup point.');
-    expect(onPlaceOrder).not.toHaveBeenCalled();
+    expect(mocked.place).not.toHaveBeenCalled();
 
     // Fixing the problem clears the error.
     await user.click(screen.getByLabelText(/Home delivery/));
@@ -176,24 +184,56 @@ describe('CheckoutView', () => {
   });
 
   it('requires a pickup point when collecting', async () => {
-    const { user, onPlaceOrder } = setUp();
+    const { user } = setUp();
     await waitFor(() => expect(screen.getByLabelText(/Collect from a pickup point/)).toBeEnabled());
 
     await user.click(screen.getByLabelText(/Collect from a pickup point/));
     await user.click(screen.getByRole('button', { name: 'Place order' }));
 
     expect(screen.getByRole('alert')).toHaveTextContent('Choose a pickup point.');
-    expect(onPlaceOrder).not.toHaveBeenCalled();
+    expect(mocked.place).not.toHaveBeenCalled();
   });
 
-  it('places a home-delivery order', async () => {
-    const { user, onPlaceOrder } = setUp();
+  it('places a home-delivery order and goes to the confirmation, reloading the emptied cart', async () => {
+    const { user } = setUp();
     await screen.findByLabelText(/Home delivery/);
 
     await user.click(screen.getByLabelText(/Home delivery/));
     await user.click(screen.getByRole('button', { name: 'Place order' }));
 
-    expect(onPlaceOrder).toHaveBeenCalledWith({ type: 'DELIVERY', pickupLocationId: null });
+    expect(mocked.place).toHaveBeenCalledWith({ fulfillmentType: 'DELIVERY', pickupLocationId: undefined }, expect.any(String));
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/orders/confirmation?orderId=order-1'));
+    await waitFor(() => expect(mocked.cart).toHaveBeenCalledTimes(2));
+  });
+
+  it('reuses the idempotency key when the buyer retries after a failure', async () => {
+    const { user } = setUp();
+    await screen.findByLabelText(/Home delivery/);
+    mocked.place.mockRejectedValueOnce(new ApiError('Unable to reach the server. Please try again.', 0));
+
+    await user.click(screen.getByLabelText(/Home delivery/));
+    await user.click(screen.getByRole('button', { name: 'Place order' }));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Unable to reach the server. Please try again.'));
+    await user.click(screen.getByRole('button', { name: 'Place order' }));
+
+    await waitFor(() => expect(mocked.place).toHaveBeenCalledTimes(2));
+    const [first, second] = mocked.place.mock.calls.map(([, key]) => key);
+    expect(first).toMatch(/^[0-9a-f-]{32,36}$/);
+    expect(second).toBe(first);
+  });
+
+  it('shows the reason and reloads the cart when the cart changed (e.g. EMPTY_CART)', async () => {
+    const { user } = setUp();
+    await screen.findByLabelText(/Home delivery/);
+    mocked.place.mockRejectedValueOnce(new ApiError('Your cart is empty.', 400, 'EMPTY_CART'));
+    mocked.cart.mockResolvedValue(cartOf());
+
+    await user.click(screen.getByLabelText(/Home delivery/));
+    await user.click(screen.getByRole('button', { name: 'Place order' }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Your cart is empty.'));
+    expect(await screen.findByRole('heading', { name: 'Your cart is empty' })).toBeInTheDocument();
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it('disables home delivery until the buyer has a delivery address', async () => {

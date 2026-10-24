@@ -10,6 +10,8 @@ import lombok.Builder;
 public class OrderItemDto {
     private UUID productId;
     private String name;
+    private String unit;
     private int quantity;
     private Integer priceAtPurchaseCents;
+    private long lineTotalCents;
 }

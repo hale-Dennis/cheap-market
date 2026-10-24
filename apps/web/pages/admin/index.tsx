@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { NotificationsPanel } from '@/components/admin/NotificationsPanel';
 import { buttonVariants } from '@/components/ui/button';
 import {
   Card,
@@ -49,6 +50,10 @@ export default function AdminDashboard({ email: adminEmail }: SessionPageProps) 
       <p className="mt-1 text-muted-foreground">
         Signed in as <span className="font-medium">{adminEmail}</span>
       </p>
+
+      <div className="mt-6">
+        <NotificationsPanel />
+      </div>
 
       <ul className="mt-6 grid gap-4 sm:grid-cols-2">
         {SECTIONS.map((section) => (

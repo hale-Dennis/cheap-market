@@ -107,6 +107,20 @@ describe('/api/v1/[...path] proxy', () => {
     });
   });
 
+  it('forwards the Idempotency-Key header', async () => {
+    const fetchMock = mockUpstream(201, { status: 201, data: { orderId: 'o-1' } });
+
+    await call({
+      method: 'POST',
+      path: ['orders'],
+      cookies: { cm_access_token: 'session-token' },
+      headers: { 'content-type': 'application/json', 'idempotency-key': 'checkout-1234abcd' },
+      body: '{"fulfillmentType":"DELIVERY"}',
+    });
+
+    expect(fetchMock.mock.calls[0][1].headers).toMatchObject({ 'Idempotency-Key': 'checkout-1234abcd' });
+  });
+
   it('forwards query parameters and sends no body for GET', async () => {
     const fetchMock = mockUpstream(200, { status: 200, data: [] });
 

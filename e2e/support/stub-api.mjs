@@ -103,6 +103,70 @@ function productDetail(id) {
 const pickupLocations = [];
 const DELIVERY_FEE_CENTS = 1000;
 
+const orders = [];
+const notifications = [];
+
+function orderNumber() {
+  const alphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  return 'CM-' + Array.from({ length: 8 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('');
+}
+
+/** Mirrors OrderService.placeOrder: idempotent per buyer+key, validates cart and fulfillment. */
+async function placeOrder(req, res, email) {
+  const key = req.headers['idempotency-key'] ?? null;
+  const existing = key && orders.find((o) => o.buyerEmail === email && o.idempotencyKey === key);
+  if (existing) {
+    return send(res, 200, { message: 'This order was already placed.', data: { orderId: existing.id, orderNumber: existing.orderNumber, duplicate: true } });
+  }
+  const body = await readJson(req);
+  const cart = cartFor(email);
+  if (cart.items.length === 0) return send(res, 400, { code: 'EMPTY_CART', message: 'Your cart is empty.' });
+  const unavailable = cart.items.filter((i) => !i.available).map((i) => i.name);
+  if (unavailable.length) {
+    return send(res, 422, { code: 'UNAVAILABLE_ITEMS', message: `Some items are no longer available: ${unavailable.join(', ')}. Remove them from your cart.` });
+  }
+  const buyer = USERS[email];
+  let pickupLocation = null;
+  let deliveryAddress = null;
+  if (body.fulfillmentType === 'PICKUP') {
+    pickupLocation = pickupLocations.find((l) => l.id === body.pickupLocationId);
+    if (!pickupLocation) return send(res, 400, { code: 'PICKUP_LOCATION_REQUIRED', message: 'Choose a pickup point.' });
+    if (pickupLocation.region !== buyer.region) {
+      return send(res, 422, { code: 'PICKUP_LOCATION_OUT_OF_REGION', message: 'Choose a pickup point in your region.' });
+    }
+  } else {
+    if (!buyer.deliveryAddress) return send(res, 422, { code: 'DELIVERY_ADDRESS_REQUIRED', message: 'Add a delivery address to your profile first.' });
+    deliveryAddress = { ...buyer.deliveryAddress };
+  }
+  const deliveryFeeCents = body.fulfillmentType === 'DELIVERY' ? DELIVERY_FEE_CENTS : 0;
+  const order = {
+    id: randomUUID(),
+    orderNumber: orderNumber(),
+    buyerEmail: email,
+    idempotencyKey: key,
+    status: 'PENDING',
+    paymentStatus: 'UNPAID',
+    items: cart.items.map((i) => ({
+      productId: i.productId, name: i.name, unit: i.unit, quantity: i.quantity,
+      priceAtPurchaseCents: i.priceCents, lineTotalCents: i.lineTotalCents,
+    })),
+    itemsSubtotalCents: cart.subtotalCents,
+    deliveryFeeCents,
+    finalTotalCents: cart.subtotalCents + deliveryFeeCents,
+    fulfillmentType: body.fulfillmentType,
+    deliveryAddress,
+    pickupLocation,
+    createdAt: new Date().toISOString(),
+  };
+  orders.push(order);
+  carts.set(email, new Map());
+  notifications.unshift({
+    id: randomUUID(), type: 'NEW_ORDER', orderId: order.id, createdAt: order.createdAt, read: false,
+    message: `New order ${order.orderNumber} from ${buyer.fullName}: ${cart.totalItems} items, GH₵ ${(order.finalTotalCents / 100).toFixed(2)}.`,
+  });
+  return send(res, 201, { message: 'Order placed successfully.', data: { orderId: order.id, orderNumber: order.orderNumber, duplicate: false } });
+}
+
 // Carts keyed by buyer email: productId -> quantity.
 const carts = new Map();
 
@@ -378,6 +442,33 @@ createServer(async (req, res) => {
     return detail
       ? send(res, 200, { message: 'Product details retrieved successfully.', data: detail })
       : send(res, 404, { message: `Product not found with id: ${detailMatch[1]}` });
+  }
+  if (url.pathname === '/api/v1/orders' && req.method === 'POST') {
+    const session = await sessionFromRequest(req);
+    if (!session) return send(res, 401, { message: 'Authentication is required to access this resource.' });
+    if (session.role !== 'BUYER') return send(res, 403, { message: 'You do not have permission to access this resource.' });
+    return placeOrder(req, res, session.email);
+  }
+  const orderMatch = /^\/api\/v1\/orders\/([^/]+)$/.exec(url.pathname);
+  if (orderMatch && req.method === 'GET') {
+    const session = await sessionFromRequest(req);
+    if (!session) return send(res, 401, { message: 'Authentication is required to access this resource.' });
+    const order = orders.find((o) => o.id === orderMatch[1] && o.buyerEmail === session.email);
+    if (!order) return send(res, 404, { message: 'Order not found' });
+    const { buyerEmail, idempotencyKey, ...detail } = order;
+    return send(res, 200, { message: 'Order details retrieved successfully.', data: detail });
+  }
+  if (url.pathname.startsWith('/api/v1/admin/notifications')) {
+    if ((await sessionFromRequest(req))?.role !== 'ADMIN') return send(res, 403, { message: 'Forbidden' });
+    if (req.method === 'GET') {
+      return send(res, 200, { message: 'Notifications retrieved successfully.', data: {
+        unreadCount: notifications.filter((n) => !n.read).length, notifications: notifications.slice(0, 20) } });
+    }
+    const readMatch = /\/notifications\/([^/]+)\/read$/.exec(url.pathname);
+    if (url.pathname.endsWith('/read-all')) notifications.forEach((n) => { n.read = true; });
+    else if (readMatch) { const n = notifications.find((x) => x.id === readMatch[1]); if (n) n.read = true; }
+    res.writeHead(204);
+    return res.end();
   }
   const cartItemMatch = /^\/api\/v1\/cart\/items\/([^/]+)$/.exec(url.pathname);
   if (cartItemMatch && req.method === 'DELETE') {

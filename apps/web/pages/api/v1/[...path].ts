@@ -51,6 +51,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.headers['content-type']) {
     headers['Content-Type'] = req.headers['content-type'];
   }
+  // Lets the API recognise a retried order (POST /orders) instead of creating a duplicate.
+  const idempotencyKey = req.headers['idempotency-key'];
+  if (typeof idempotencyKey === 'string') {
+    headers['Idempotency-Key'] = idempotencyKey;
+  }
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }

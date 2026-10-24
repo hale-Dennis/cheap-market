@@ -2,6 +2,8 @@ package com.ftb.api.mapper;
 
 import com.ftb.api.dto.response.AdminOrderSummaryDto;
 import org.mapstruct.Mapper;
+import com.ftb.api.dto.response.PickupLocationResponseDto;
+import com.ftb.api.model.PickupLocation;
 import org.mapstruct.Mapping;
 import com.ftb.api.model.Order;
 import com.ftb.api.model.OrderItem;
@@ -21,9 +23,19 @@ public interface OrderMapper {
     @Mapping(source = "finalTotal", target = "finalTotalCents", qualifiedByName = "bigDecimalToCents")
     OrderConfirmationResponse toOrderConfirmationResponse(Order order);
 
-    @Mapping(source = "product.id", target = "productId")
-    @Mapping(source = "product.name", target = "name")
-    OrderItemDto toOrderItemDto(OrderItem orderItem);
+    default OrderItemDto toOrderItemDto(OrderItem orderItem) {
+        long unitCents = bigDecimalToCents(orderItem.getPriceAtPurchase());
+        return OrderItemDto.builder()
+                .productId(orderItem.getProduct().getId())
+                .name(orderItem.getProduct().getName())
+                .unit(orderItem.getProduct().getUnit())
+                .quantity(orderItem.getQuantity())
+                .priceAtPurchaseCents(Math.toIntExact(unitCents))
+                .lineTotalCents(unitCents * orderItem.getQuantity())
+                .build();
+    }
+
+    PickupLocationResponseDto toPickupLocationResponseDto(PickupLocation location);
 
     @Mapping(source = "finalTotal", target = "finalTotalCents", qualifiedByName = "bigDecimalToCents")
     OrderSummaryResponseDto toOrderSummaryResponseDto(Order order);

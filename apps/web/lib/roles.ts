@@ -5,7 +5,7 @@ import { safeRedirectPath } from '@/lib/redirect';
 /** Where each role lands after signing in, and the URL prefixes only that role may visit. */
 const AREAS: Partial<Record<UserRole, { home: string; prefixes: string[] }>> = {
   ADMIN: { home: '/admin', prefixes: ['/admin'] },
-  BUYER: { home: '/buyer/profile', prefixes: ['/buyer', '/cart', '/checkout'] },
+  BUYER: { home: '/buyer/profile', prefixes: ['/buyer', '/cart', '/checkout', '/orders'] },
 };
 
 export function homeForRole(role: UserRole): string {
