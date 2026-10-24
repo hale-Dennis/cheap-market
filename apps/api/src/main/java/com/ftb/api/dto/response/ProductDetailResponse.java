@@ -21,5 +21,6 @@ public class ProductDetailResponse {
     private String unit;
     private LocalDate harvestDate;
     private List<String> imageUrls;
+    private String categoryName;
     private FarmerInfo farmer;
 }

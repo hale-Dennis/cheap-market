@@ -50,6 +50,8 @@ class ProductMapperTest {
         ProductDetailResponse detail = mapper.toProductDetailResponse(product(List.of("/a.jpg")));
 
         assertEquals(1850, detail.getPriceCents());
+        assertEquals("Vegetables", detail.getCategoryName());
         assertEquals("Ama Mensah", detail.getFarmer().getFullName());
+        assertEquals(4.5, detail.getFarmer().getAverageRating());
     }
 }

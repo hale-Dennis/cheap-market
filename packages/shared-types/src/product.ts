@@ -62,3 +62,26 @@ export interface ProductCard {
   farmerName: string;
   categoryName: string;
 }
+
+/** The farmer behind a listing, as shown on the product page (see FarmerInfo.java). */
+export interface FarmerSummary {
+  fullName: string;
+  region: string;
+  /** Null or 0 until the farmer has been rated. */
+  averageRating: number | null;
+  ratingCount: number | null;
+}
+
+/** Response of GET /products/{id} (see ProductDetailResponse.java). */
+export interface ProductDetail {
+  id: string;
+  name: string;
+  description: string | null;
+  priceCents: number;
+  unit: string;
+  /** ISO date (YYYY-MM-DD). */
+  harvestDate: string;
+  imageUrls: string[];
+  categoryName: string;
+  farmer: FarmerSummary;
+}

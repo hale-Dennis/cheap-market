@@ -12,5 +12,8 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class FarmerInfo {
     private String fullName;
+    private String region;
+    /** Null or 0 until the farmer has been rated. */
     private Double averageRating;
+    private Integer ratingCount;
 }

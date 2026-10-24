@@ -16,6 +16,8 @@ import com.ftb.api.config.CustomAuthenticationEntryPoint;
 import com.ftb.api.dto.response.CategoryResponse;
 import com.ftb.api.dto.response.PaginatedResponse;
 import com.ftb.api.dto.response.ProductCardResponse;
+import com.ftb.api.dto.response.ProductDetailResponse;
+import com.ftb.api.dto.response.FarmerInfo;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.data.domain.Pageable;
@@ -111,6 +113,42 @@ class PublicCatalogControllerTest {
         mockMvc.perform(get("/api/v1/products?" + (query == null ? "" : query)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString(expectedMessage)));
+
+        verifyNoInteractions(productService);
+    }
+
+    @Test
+    void productDetail_WithoutLogin_ShouldReturnCacheableDetail() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(productService.getPublicProductById(id)).thenReturn(ProductDetailResponse.builder()
+                .id(id).name("Tomatoes").priceCents(1850).unit("per kg")
+                .farmer(FarmerInfo.builder().fullName("Ama Mensah").averageRating(4.5).ratingCount(12).build())
+                .build());
+
+        mockMvc.perform(get("/api/v1/products/" + id))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "max-age=300, public"))
+                .andExpect(jsonPath("$.data.priceCents").value(1850))
+                .andExpect(jsonPath("$.data.farmer.fullName").value("Ama Mensah"))
+                .andExpect(jsonPath("$.data.farmer.ratingCount").value(12));
+    }
+
+    @Test
+    void productDetail_NotFound_ShouldReturn404() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(productService.getPublicProductById(id))
+                .thenThrow(new com.ftb.api.exception.ResourceNotFoundException("Product not found with id: " + id));
+
+        mockMvc.perform(get("/api/v1/products/" + id))
+                .andExpect(status().isNotFound())
+                // A missing product must not be cached as if it were catalog data.
+                .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("public"))));
+    }
+
+    @Test
+    void productDetail_InvalidId_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/v1/products/not-a-uuid"))
+                .andExpect(status().isBadRequest());
 
         verifyNoInteractions(productService);
     }

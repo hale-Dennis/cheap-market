@@ -39,6 +39,7 @@ public interface ProductMapper {
     }
 
     @Mapping(source = "farmer", target = "farmer")
+    @Mapping(source = "category.name", target = "categoryName")
     @Mapping(source = "price", target = "priceCents", qualifiedByName = "bigDecimalToCentsInt")
     ProductDetailResponse toProductDetailResponse(Product product);
 
