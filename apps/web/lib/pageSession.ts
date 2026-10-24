@@ -32,3 +32,5 @@ function requireRole(
 
 export const requireAdminSession = requireRole('ADMIN', '/login');
 export const requireBuyerSession = requireRole('BUYER', '/signup');
+/** For the cart: returning buyers are more likely than new ones, so send visitors to sign in. */
+export const requireBuyerSessionForCart = requireRole('BUYER', '/login');

@@ -20,9 +20,8 @@ const mockedSetCartItem = setCartItem as jest.MockedFunction<typeof setCartItem>
 
 const cart = (totalItems: number): Cart => ({ items: [], totalItems, subtotalCents: 0 });
 
-/** The header cart badge, whose text spans several elements ("Cart · 3" + " items"). */
-const cartBadge = (text: string) =>
-  screen.findByText((_, element) => element?.tagName === 'SPAN' && element.textContent === text);
+/** The header cart link, e.g. "Cart · 3 items" (" items" is a separate, sometimes visually hidden span). */
+const cartBadge = (name: string) => screen.findByRole('link', { name });
 
 describe('image helpers', () => {
   const cloudinary = 'https://res.cloudinary.com/demo/image/upload/v1/cheap-market/farmers/f/a.jpg';
@@ -161,8 +160,7 @@ describe('AddToCart', () => {
     mockedGetCart.mockReturnValue(new Promise(() => {}));
     renderWithLayout('BUYER');
 
-    expect(screen.getByText('Cart')).toBeInTheDocument();
-    expect(screen.queryByText(/Cart · /)).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Cart' })).toHaveAttribute('href', '/cart');
   });
 
   it('adds the chosen quantity and updates the cart count in the header', async () => {

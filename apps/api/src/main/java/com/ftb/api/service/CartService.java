@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,6 +27,9 @@ public class CartService {
     private final ProductRepository productRepository;
     private final CartMapper cartMapper;
 
+    /** Error code returned (with 422) when a product can't be added because it isn't for sale. */
+    public static final String INACTIVE_PRODUCT = "INACTIVE_PRODUCT";
+
     @Transactional
     public CartResponseDto getCartForBuyer(String buyerEmail) {
         User buyer = findUserByEmail(buyerEmail);
@@ -38,24 +42,27 @@ public class CartService {
         User buyer = findUserByEmail(buyerEmail);
         Cart cart = getOrCreateCartForBuyer(buyer);
 
-        Product product = productRepository.findById(request.getProductId())
+        Product product = productRepository.findWithFarmerAndCategoryById(request.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + request.getProductId()));
 
-        if (product.getListingStatus() != ProductStatus.ACTIVE) {
-            throw new InvalidRequestException("Product is not active and cannot be added to the cart.");
+        // Also blocks raising the quantity of an item that has stopped being sold; it can only be removed.
+        if (!CartMapper.isAvailable(product)) {
+            throw new InvalidRequestException(INACTIVE_PRODUCT, "This product is no longer available and cannot be added to the cart.");
         }
 
+        int priceCents = product.getPrice().movePointRight(2).intValueExact();
         Optional<CartItem> existingItem = cart.getItems().stream()
                 .filter(item -> item.getProduct().getId().equals(request.getProductId()))
                 .findFirst();
 
         if (existingItem.isPresent()) {
             existingItem.get().setQuantity(request.getQuantity());
+            existingItem.get().setPriceCentsAtAdd(priceCents);
         } else {
             CartItem newItem = new CartItem();
             newItem.setProduct(product);
             newItem.setQuantity(request.getQuantity());
-            newItem.setPriceCentsAtAdd(product.getPrice().movePointRight(2).intValue());
+            newItem.setPriceCentsAtAdd(priceCents);
             cart.addItem(newItem);
         }
 
@@ -73,6 +80,16 @@ public class CartService {
                 .findFirst()
                 .ifPresent(cart::removeItem);
 
+        cartRepository.save(cart);
+        return cartMapper.toCartResponseDto(cart);
+    }
+
+    /** Empties the buyer's cart. */
+    @Transactional
+    public CartResponseDto clearCart(String buyerEmail) {
+        User buyer = findUserByEmail(buyerEmail);
+        Cart cart = getOrCreateCartForBuyer(buyer);
+        List.copyOf(cart.getItems()).forEach(cart::removeItem);
         cartRepository.save(cart);
         return cartMapper.toCartResponseDto(cart);
     }

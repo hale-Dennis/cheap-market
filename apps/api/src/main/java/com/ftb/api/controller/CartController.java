@@ -39,6 +39,12 @@ public class CartController {
         return ResponseHandler.successResponse("Cart updated successfully.", HttpStatus.OK, updatedCart);
     }
 
+    @DeleteMapping
+    public ResponseEntity<ApiResponse<CartResponseDto>> clearCart(Authentication authentication) {
+        CartResponseDto cart = cartService.clearCart(authentication.getName());
+        return ResponseHandler.successResponse("Cart cleared successfully.", HttpStatus.OK, cart);
+    }
+
     @DeleteMapping("/items/{productId}")
     public ResponseEntity<ApiResponse<CartResponseDto>> removeItemFromCart(
             Authentication authentication,

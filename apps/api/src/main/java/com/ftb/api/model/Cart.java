@@ -24,6 +24,8 @@ public class Cart {
     @JoinColumn(name = "buyer_id", nullable = false, unique = true)
     private User buyer;
 
+    // Items saved before addedAt existed have none; they were added first.
+    @OrderBy("addedAt ASC NULLS FIRST, id ASC")
     @OneToMany(
             mappedBy = "cart",
             cascade = CascadeType.ALL,

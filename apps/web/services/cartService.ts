@@ -11,3 +11,11 @@ export function getCart(): Promise<Cart> {
 export function setCartItem(request: SetCartItemRequest): Promise<Cart> {
   return apiRequest<Cart>('/cart', { method: 'POST', body: JSON.stringify(request) });
 }
+
+export function removeCartItem(productId: string): Promise<Cart> {
+  return apiRequest<Cart>(`/cart/items/${encodeURIComponent(productId)}`, { method: 'DELETE' });
+}
+
+export function clearCart(): Promise<Cart> {
+  return apiRequest<Cart>('/cart', { method: 'DELETE' });
+}

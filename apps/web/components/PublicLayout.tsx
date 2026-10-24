@@ -3,9 +3,9 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { UserRole } from '@cheap-market/shared-types';
 
+import { CartLink } from '@/components/cart/CartLink';
 import { SignOutButton } from '@/components/SignOutButton';
 import { buttonVariants } from '@/components/ui/button';
-import { useCart } from '@/hooks/useCart';
 import { homeForRole } from '@/lib/roles';
 
 export interface PublicSession {
@@ -17,23 +17,6 @@ interface PublicLayoutProps {
   title: string;
   session: PublicSession | null;
   children: ReactNode;
-}
-
-/** How many items a signed-in buyer has in their cart; updates when something is added. */
-function CartCount() {
-  const { data: cart } = useCart(true);
-  if (!cart) {
-    // Don't show a misleading "0" while the cart is loading.
-    return <span className="whitespace-nowrap rounded-full bg-muted px-3 py-1 text-sm">Cart</span>;
-  }
-  const count = cart.totalItems;
-  return (
-    <span aria-live="polite" className="whitespace-nowrap rounded-full bg-muted px-3 py-1 text-sm">
-      Cart · {count}
-      {/* Visually hidden on phones (to fit the header) but always read by screen readers. */}
-      <span className="sr-only sm:not-sr-only"> {count === 1 ? 'item' : 'items'}</span>
-    </span>
-  );
 }
 
 /** Layout for pages anyone can visit, such as the catalog. */
@@ -58,7 +41,7 @@ export function PublicLayout({ title, session, children }: PublicLayoutProps) {
             <div className="flex items-center gap-2 sm:gap-3">
               {session ? (
                 <>
-                  {session.role === 'BUYER' && <CartCount />}
+                  {session.role === 'BUYER' && <CartLink />}
                   <Link
                     href={homeForRole(session.role)}
                     className="text-sm text-muted-foreground hover:text-foreground"

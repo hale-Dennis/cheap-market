@@ -1,6 +1,8 @@
 package com.ftb.api.model;
 
 import jakarta.persistence.*;
+import java.time.Instant;
+import org.hibernate.annotations.CreationTimestamp;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -27,6 +29,10 @@ public class CartItem {
     @Column(nullable = false)
     private int quantity;
 
+    /** The product's price when it was last added or its quantity changed. */
     @Column(nullable = false)
     private Integer priceCentsAtAdd;
+
+    @CreationTimestamp
+    private Instant addedAt;
 }
