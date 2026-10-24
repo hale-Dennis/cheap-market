@@ -16,4 +16,6 @@ services:
     name: cheap-market-api
     env: docker
     dockerfilePath: apps/api/Dockerfile
+    dockerContext: apps/api
+    healthCheckPath: /actuator/health
     plan: free

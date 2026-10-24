@@ -30,6 +30,21 @@ These instructions will get you a copy of the project up and running on your loc
 * PostgreSQL 16
 * A running Cloudinary instance (for image uploads)
 
+### Run everything with Docker
+
+The quickest way to run the full stack (Postgres, API and web app) is Docker Compose. Only Docker is required.
+
+```sh
+cp .env.example .env   # optional: defaults work out of the box
+docker compose up --build
+```
+
+* Web app: `http://localhost:3000` (admin sign-in at `/login` with `admin@default.com` / `defaultpassword` unless overridden)
+* API: `http://localhost:8080` (Swagger UI at `/swagger-ui.html`, health at `/actuator/health`)
+* Postgres: `localhost:5432`, database `cheap_market`
+
+After code changes, re-run `docker compose up --build`. To wipe the database, run `docker compose down -v`.
+
 ### Installation & Setup
 
 1.  **Clone the repository:**

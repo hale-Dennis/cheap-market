@@ -62,8 +62,15 @@ jobs:
       - name: Build with Maven
         run: mvn -B test package --file pom.xml
 
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build images
+        run: docker compose build
+
   deploy:
-    needs: [frontend, e2e, backend]
+    needs: [frontend, e2e, backend, docker]
     runs-on: ubuntu-latest
     steps:
       - run: echo "Deploy steps handled by Render via render.yaml"

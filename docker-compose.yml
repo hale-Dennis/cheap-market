@@ -1,0 +1,58 @@
+# Full local stack: Postgres + Spring Boot API + Next.js web.
+#   docker compose up --build
+# Defaults below are for local use only; override them in a .env file (see .env.example).
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: cheap_market
+      POSTGRES_USER: ${DB_USER:-cheap_market}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-cheap_market}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./apps/api
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/cheap_market
+      DB_USER: ${DB_USER:-cheap_market}
+      DB_PASSWORD: ${DB_PASSWORD:-cheap_market}
+      JWT_SECRET: ${JWT_SECRET:-bG9jYWwtZGV2LW9ubHktand0LXNlY3JldC1kby1ub3QtdXNlLWluLXByb2R1Y3Rpb24=}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin@default.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-defaultpassword}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      API_BASE_URL: http://api:8080
+      # Must match the API's JWT_SECRET: the web app verifies session tokens with it.
+      JWT_SECRET: ${JWT_SECRET:-bG9jYWwtZGV2LW9ubHktand0LXNlY3JldC1kby1ub3QtdXNlLWluLXByb2R1Y3Rpb24=}
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  pgdata:
