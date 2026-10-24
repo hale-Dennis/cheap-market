@@ -31,7 +31,7 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText('Full name'), 'Ama Mensah');
   await user.selectOptions(screen.getByLabelText('Home region'), 'ASHANTI');
   await user.type(screen.getByLabelText('Phone number'), '024 123 4567');
-  await user.type(screen.getByLabelText('Email'), 'ama@test.com');
+  await user.type(screen.getByLabelText('Email (optional)'), 'ama@test.com');
 }
 
 describe('CreateFarmerForm', () => {
@@ -56,7 +56,7 @@ describe('CreateFarmerForm', () => {
     expect(await screen.findByText('Full name is required.')).toBeInTheDocument();
     expect(screen.getByText('Select a region.')).toBeInTheDocument();
     expect(screen.getByText('Phone number is required.')).toBeInTheDocument();
-    expect(screen.getByText('Email is required.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Email (optional)')).not.toHaveAttribute('aria-invalid', 'true');
     expect(screen.getByLabelText('Full name')).toHaveAttribute('aria-invalid', 'true');
     expect(mockedCreateFarmer).not.toHaveBeenCalled();
   });
@@ -67,7 +67,7 @@ describe('CreateFarmerForm', () => {
     await user.type(screen.getByLabelText('Full name'), 'Ama Mensah');
     await user.selectOptions(screen.getByLabelText('Home region'), 'ASHANTI');
     await user.type(screen.getByLabelText('Phone number'), '12345');
-    await user.type(screen.getByLabelText('Email'), 'not-an-email');
+    await user.type(screen.getByLabelText('Email (optional)'), 'not-an-email');
     await user.click(screen.getByRole('button', { name: 'Create farmer' }));
 
     expect(
@@ -91,6 +91,24 @@ describe('CreateFarmerForm', () => {
       email: 'ama@test.com',
     });
     expect(onCreated).toHaveBeenCalledWith(FARMER);
+  });
+
+  it('submits without an email address', async () => {
+    mockedCreateFarmer.mockResolvedValue({ ...FARMER, email: null });
+    const { user, onCreated } = renderForm();
+
+    await user.type(screen.getByLabelText('Full name'), 'Ama Mensah');
+    await user.selectOptions(screen.getByLabelText('Home region'), 'ASHANTI');
+    await user.type(screen.getByLabelText('Phone number'), '0241234567');
+    await user.click(screen.getByRole('button', { name: 'Create farmer' }));
+
+    expect(mockedCreateFarmer).toHaveBeenCalledWith({
+      fullName: 'Ama Mensah',
+      region: 'ASHANTI',
+      phoneNumber: '0241234567',
+      email: undefined,
+    });
+    expect(onCreated).toHaveBeenCalled();
   });
 
   it('shows the server message when the farmer already exists', async () => {

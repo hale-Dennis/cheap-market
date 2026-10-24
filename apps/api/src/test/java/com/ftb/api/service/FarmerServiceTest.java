@@ -10,6 +10,9 @@ import org.mockito.InjectMocks;
 import org.mockito.ArgumentCaptor;
 import com.ftb.api.model.UserRole;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import static org.mockito.Mockito.*;
 import com.ftb.api.mapper.FarmerMapper;
 import com.ftb.api.model.AccountStatus;
@@ -74,6 +77,24 @@ class FarmerServiceTest {
         assertEquals("hashed-temporary-password", farmer.getPasswordHash());
         verify(userRepository).existsByEmail("ama@test.com");
         verify(userRepository).existsByPhoneNumber("+233241234567");
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"", "   "})
+    void createFarmer_WithoutEmail_ShouldStoreNullEmailAndSkipEmailCheck(String email) {
+        CreateFarmerRequest request = new CreateFarmerRequest("Kwame Asante", email, "0201234567", "VOLTA");
+        when(farmerMapper.toUser(request)).thenReturn(User.builder().region("VOLTA").build());
+        when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        farmerService.createFarmer(request);
+
+        ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).saveAndFlush(saved.capture());
+        assertNull(saved.getValue().getEmail());
+        assertEquals("+233201234567", saved.getValue().getPhoneNumber());
+        verify(userRepository, never()).existsByEmail(any());
+        verify(userRepository).existsByPhoneNumber("+233201234567");
     }
 
     @Test

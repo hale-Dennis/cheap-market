@@ -21,7 +21,7 @@ public class CreateFarmerRequest {
     @Size(max = 255, message = "Full name must be at most 255 characters")
     private String fullName;
 
-    @NotBlank(message = "Email cannot be blank")
+    /** Optional: many farmers have no email address. */
     @Email(message = "A valid email address is required")
     private String email;
 

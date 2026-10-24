@@ -86,7 +86,14 @@ export default function FarmersPage({ adminEmail }: AdminPageProps) {
                     <td className="whitespace-nowrap px-4 py-3">
                       {formatGhanaianPhone(farmer.phoneNumber)}
                     </td>
-                    <td className="px-4 py-3">{farmer.email}</td>
+                    <td className="px-4 py-3">
+                      {farmer.email ?? (
+                        <span className="text-muted-foreground">
+                          <span aria-hidden="true">—</span>
+                          <span className="sr-only">No email</span>
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

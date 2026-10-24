@@ -63,12 +63,12 @@ async function login(req, res) {
 
 async function createFarmer(req, res) {
   const body = await readJson(req);
-  const email = String(body.email ?? '').trim().toLowerCase();
+  const email = String(body.email ?? '').trim().toLowerCase() || null;
   const phoneNumber = normalizePhone(body.phoneNumber);
-  if (!body.fullName || !email || !phoneNumber || !body.region) {
+  if (!body.fullName || !phoneNumber || !body.region) {
     return send(res, 400, { message: 'Validation failed' });
   }
-  if (farmers.some((farmer) => farmer.email === email)) {
+  if (email && farmers.some((farmer) => farmer.email === email)) {
     return send(res, 409, { message: 'A user with this email already exists.' });
   }
   if (farmers.some((farmer) => farmer.phoneNumber === phoneNumber)) {

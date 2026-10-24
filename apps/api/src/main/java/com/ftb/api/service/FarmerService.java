@@ -42,10 +42,10 @@ public class FarmerService {
 
     @Transactional
     public FarmerResponse createFarmer(CreateFarmerRequest request) {
-        String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
+        String email = normalizeOptionalEmail(request.getEmail());
         String phoneNumber = normalizePhoneNumber(request.getPhoneNumber());
 
-        if (userRepository.existsByEmail(email)) {
+        if (email != null && userRepository.existsByEmail(email)) {
             throw new ConflictException("A user with this email already exists.");
         }
         if (userRepository.existsByPhoneNumber(phoneNumber)) {
@@ -124,6 +124,10 @@ public class FarmerService {
             throw new ConflictException("Cannot delete a farmer who has received ratings.");
         }
         userRepository.deleteById(farmerId);
+    }
+
+    private static String normalizeOptionalEmail(String email) {
+        return email == null || email.isBlank() ? null : email.trim().toLowerCase(Locale.ROOT);
     }
 
     private String normalizePhoneNumber(String phoneNumber) {

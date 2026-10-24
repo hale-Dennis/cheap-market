@@ -68,6 +68,7 @@ export function CreateFarmerForm({ onCreated }: CreateFarmerFormProps) {
       const farmer = await createFarmer({
         ...values,
         region: values.region as RegionCode,
+        email: values.email || undefined,
       });
       onCreated(farmer);
     } catch (error) {
@@ -136,7 +137,7 @@ export function CreateFarmerForm({ onCreated }: CreateFarmerFormProps) {
         />
       </Field>
 
-      <Field id="email" label="Email" error={errors.email?.message}>
+      <Field id="email" label="Email (optional)" error={errors.email?.message}>
         <Input
           id="email"
           type="email"

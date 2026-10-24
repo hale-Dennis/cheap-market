@@ -85,6 +85,35 @@ class FarmerControllerTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
+    void createFarmer_WithoutEmail_ShouldReturn201Created() throws Exception {
+        CreateFarmerRequest request = validRequest();
+        request.setEmail(null);
+        when(farmerService.createFarmer(any(CreateFarmerRequest.class)))
+                .thenReturn(FarmerResponse.builder().fullName("Ama Mensah").build());
+
+        mockMvc.perform(post("/api/v1/admin/farmers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void createFarmer_WithoutPhoneNumber_ShouldReturn400() throws Exception {
+        CreateFarmerRequest request = validRequest();
+        request.setPhoneNumber(null);
+
+        mockMvc.perform(post("/api/v1/admin/farmers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Phone number cannot be blank")));
+
+        verifyNoInteractions(farmerService);
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
     void createFarmer_MissingFields_ShouldReturn400() throws Exception {
         mockMvc.perform(post("/api/v1/admin/farmers")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -15,11 +15,17 @@ function uniqueFarmer() {
   };
 }
 
-async function fillFarmerForm(page: Page, farmer: ReturnType<typeof uniqueFarmer>) {
+async function fillFarmerForm(
+  page: Page,
+  farmer: ReturnType<typeof uniqueFarmer>,
+  { withEmail = true } = {},
+) {
   await page.getByLabel('Full name').fill(farmer.fullName);
   await page.getByLabel('Home region').selectOption({ label: 'Greater Accra' });
   await page.getByLabel('Phone number').fill(farmer.phone);
-  await page.getByLabel('Email').fill(farmer.email);
+  if (withEmail) {
+    await page.getByLabel('Email (optional)').fill(farmer.email);
+  }
 }
 
 test.describe('Create farmer', () => {
@@ -46,6 +52,20 @@ test.describe('Create farmer', () => {
     await expect(row).toContainText(farmer.email);
   });
 
+  test('registers a farmer without an email address', async ({ page }) => {
+    const farmer = uniqueFarmer();
+    await signInAsAdmin(page);
+    await page.goto('/admin/farmers/create');
+
+    await fillFarmerForm(page, farmer, { withEmail: false });
+    await page.getByRole('button', { name: 'Create farmer' }).click();
+
+    await expect(page).toHaveURL('/admin/farmers');
+    const row = page.getByRole('row', { name: new RegExp(farmer.fullName) });
+    await expect(row).toContainText(farmer.displayPhone);
+    await expect(row).toContainText('No email');
+  });
+
   test('shows validation errors without submitting', async ({ page }) => {
     await signInAsAdmin(page);
     await page.goto('/admin/farmers/create');
@@ -55,7 +75,7 @@ test.describe('Create farmer', () => {
     await expect(page.getByText('Full name is required.')).toBeVisible();
     await expect(page.getByText('Select a region.')).toBeVisible();
     await expect(page.getByText('Phone number is required.')).toBeVisible();
-    await expect(page.getByText('Email is required.')).toBeVisible();
+    await expect(page.getByLabel('Email (optional)')).not.toHaveAttribute('aria-invalid', 'true');
     await expect(page).toHaveURL('/admin/farmers/create');
   });
 

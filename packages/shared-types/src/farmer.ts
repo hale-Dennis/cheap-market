@@ -5,7 +5,8 @@ export type AccountStatus = 'ACTIVE' | 'SUSPENDED';
 /** Request body for POST /admin/farmers (see CreateFarmerRequest.java). */
 export interface CreateFarmerRequest {
   fullName: string;
-  email: string;
+  /** Optional: many farmers have no email address. */
+  email?: string;
   phoneNumber: string;
   region: RegionCode;
 }
@@ -14,7 +15,7 @@ export interface CreateFarmerRequest {
 export interface Farmer {
   id: string;
   fullName: string;
-  email: string;
+  email: string | null;
   /** E.164, e.g. +233241234567. */
   phoneNumber: string;
   region: string;

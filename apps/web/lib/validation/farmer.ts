@@ -10,11 +10,14 @@ export const createFarmerSchema = z.object({
     .trim()
     .min(1, 'Full name is required.')
     .max(255, 'Full name must be at most 255 characters.'),
+  // Optional: many farmers have no email address. Blank means "none".
   email: z
     .string()
     .trim()
-    .min(1, 'Email is required.')
-    .email('Enter a valid email address.'),
+    .refine(
+      (value) => value === '' || z.string().email().safeParse(value).success,
+      'Enter a valid email address.',
+    ),
   phoneNumber: z
     .string()
     .trim()
