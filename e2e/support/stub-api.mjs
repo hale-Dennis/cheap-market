@@ -21,6 +21,53 @@ const USERS = {
 };
 
 const farmers = [];
+const categories = [];
+
+function normalizeCategoryName(raw) {
+  return String(raw ?? '').trim().replace(/\s+/g, ' ');
+}
+
+function categoryNameError(name) {
+  if (!name) return 'Validation failed: name: Category name cannot be blank';
+  if (name.length > 50) return 'Validation failed: name: Category name must not exceed 50 characters';
+  return null;
+}
+
+function categoryNameTaken(name, exceptId) {
+  return categories.some((c) => c.id !== exceptId && c.name.toLowerCase() === name.toLowerCase());
+}
+
+async function handleCategories(req, res, id) {
+  if (!id && req.method === 'GET') {
+    const sorted = [...categories].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    return send(res, 200, { message: 'Categories retrieved successfully.', data: sorted });
+  }
+  if (!id && req.method === 'POST') {
+    const name = normalizeCategoryName((await readJson(req)).name);
+    const error = categoryNameError(name);
+    if (error) return send(res, 400, { message: error });
+    if (categoryNameTaken(name)) return send(res, 409, { message: 'A category with this name already exists.' });
+    const category = { id: randomUUID(), name };
+    categories.push(category);
+    return send(res, 201, { message: 'Category created successfully.', data: category });
+  }
+  const category = categories.find((c) => c.id === id);
+  if (!category) return send(res, 404, { message: `Category not found with id: ${id}` });
+  if (req.method === 'PUT') {
+    const name = normalizeCategoryName((await readJson(req)).name);
+    const error = categoryNameError(name);
+    if (error) return send(res, 400, { message: error });
+    if (categoryNameTaken(name, id)) return send(res, 409, { message: 'A category with this name already exists.' });
+    category.name = name;
+    return send(res, 200, { message: 'Category updated successfully.', data: category });
+  }
+  if (req.method === 'DELETE') {
+    categories.splice(categories.indexOf(category), 1);
+    res.writeHead(204);
+    return res.end();
+  }
+  return send(res, 405, { message: 'Method not allowed' });
+}
 
 function send(res, status, body) {
   res.writeHead(status, { 'Content-Type': 'application/json' });
@@ -174,6 +221,13 @@ createServer(async (req, res) => {
     if (session.role !== 'BUYER') return send(res, 403, { message: 'You do not have permission to access this resource.' });
     if (req.method === 'GET') return send(res, 200, { message: 'Profile retrieved successfully.', data: buyerProfile(session.email) });
     if (req.method === 'PUT') return updateBuyerProfile(req, res, session.email);
+  }
+  const categoryMatch = /^\/api\/v1\/admin\/categories(?:\/([^/]+))?$/.exec(url.pathname);
+  if (categoryMatch) {
+    const role = (await sessionFromRequest(req))?.role;
+    if (!role) return send(res, 401, { message: 'Authentication is required to access this resource.' });
+    if (role !== 'ADMIN') return send(res, 403, { message: 'You do not have permission to access this resource.' });
+    return handleCategories(req, res, categoryMatch[1]);
   }
   if (url.pathname === '/api/v1/admin/farmers') {
     const role = (await sessionFromRequest(req))?.role;

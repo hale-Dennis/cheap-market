@@ -29,6 +29,7 @@ const SECTIONS: Section[] = [
   {
     title: 'Categories',
     description: 'Organise produce into categories buyers can browse.',
+    actions: [{ href: '/admin/categories', label: 'Manage categories', primary: true }],
   },
   {
     title: 'Produce listings',
