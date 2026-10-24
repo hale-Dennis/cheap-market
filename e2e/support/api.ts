@@ -27,13 +27,27 @@ async function stubRequest<T>(path: string, init: RequestInit = {}): Promise<T> 
 }
 
 /** Creates a farmer directly in the stub API and returns it. */
-export function seedFarmer(fullName: string) {
+export function seedFarmer(fullName: string, region = 'VOLTA') {
   return stubRequest<{ id: string; fullName: string }>('/api/v1/admin/farmers', {
     method: 'POST',
     body: JSON.stringify({
       fullName,
       phoneNumber: `020${String(randomInt(0, 10_000_000)).padStart(7, '0')}`,
-      region: 'VOLTA',
+      region,
+    }),
+  });
+}
+
+/** Creates an active listing directly in the stub API and returns it. */
+export function seedListing(listing: { farmerId: string; categoryId: string; name: string; priceCents?: number }) {
+  return stubRequest<{ id: string; name: string }>('/api/v1/admin/products', {
+    method: 'POST',
+    body: JSON.stringify({
+      priceCents: 1500,
+      unit: 'per kg',
+      harvestDate: new Date().toLocaleDateString('en-CA'),
+      imageUrls: [`/api/v1/media/${randomUUID()}.jpg`],
+      ...listing,
     }),
   });
 }

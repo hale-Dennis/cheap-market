@@ -15,10 +15,13 @@ const HomePage = () => {
           Fresh produce straight from Ghanaian farmers, at fair prices.
         </p>
         <div className="flex flex-wrap justify-center gap-3">
-          <Link href="/signup" className={buttonVariants()}>
+          <Link href="/products" className={buttonVariants()}>
+            Browse produce
+          </Link>
+          <Link href="/signup" className={buttonVariants({ variant: 'outline' })}>
             Create an account
           </Link>
-          <Link href="/login" className={buttonVariants({ variant: 'outline' })}>
+          <Link href="/login" className={buttonVariants({ variant: 'ghost' })}>
             Sign in
           </Link>
         </div>

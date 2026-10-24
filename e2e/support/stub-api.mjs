@@ -44,6 +44,45 @@ async function uploadImages(req, res, url) {
   return send(res, 201, { message: 'Images uploaded successfully.', data: { urls } });
 }
 
+// Any media URL serves this 1×1 PNG, so listing photos render in the browser.
+const PIXEL_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+const REGIONS = ['AHAFO', 'ASHANTI', 'BONO', 'BONO_EAST', 'CENTRAL', 'EASTERN', 'GREATER_ACCRA', 'NORTH_EAST',
+  'NORTHERN', 'OTI', 'SAVANNAH', 'UPPER_EAST', 'UPPER_WEST', 'VOLTA', 'WESTERN', 'WESTERN_NORTH'];
+
+/** Public catalog: active listings whose farmer is in the region, newest first, 20 per page. */
+function listCatalog(url, res) {
+  const region = url.searchParams.get('region');
+  if (!REGIONS.includes(region)) {
+    return send(res, 400, { message: "Validation failed: region: Region must be one of Ghana's regions" });
+  }
+  const categoryId = url.searchParams.get('categoryId');
+  const page = Number(url.searchParams.get('page') ?? 0);
+  const size = Number(url.searchParams.get('size') ?? 20);
+  const matching = products
+    .filter((p) => p.listingStatus === 'ACTIVE')
+    .filter((p) => farmers.find((f) => f.id === p.farmerId)?.region === region)
+    .filter((p) => !categoryId || p.categoryId === categoryId)
+    .reverse();
+  const content = matching.slice(page * size, (page + 1) * size).map((p) => ({
+    id: p.id,
+    name: p.name,
+    priceCents: p.priceCents,
+    unit: p.unit,
+    primaryImageUrl: p.imageUrls[0] ?? null,
+    harvestDate: p.harvestDate,
+    farmerName: farmers.find((f) => f.id === p.farmerId)?.fullName,
+    categoryName: categories.find((c) => c.id === p.categoryId)?.name,
+  }));
+  return send(res, 200, {
+    message: 'Products retrieved successfully.',
+    data: { content, currentPage: page, totalPages: Math.ceil(matching.length / size), totalElements: matching.length, size },
+  });
+}
+
 async function handleProducts(req, res) {
   if (req.method === 'GET') {
     return send(res, 200, { message: 'Admin products retrieved successfully.', data: { content: products } });
@@ -259,6 +298,17 @@ createServer(async (req, res) => {
 
   if (req.method === 'GET' && url.pathname === '/health') {
     return send(res, 200, { message: 'ok' });
+  }
+  if (req.method === 'GET' && url.pathname.startsWith('/api/v1/media/')) {
+    res.writeHead(200, { 'Content-Type': 'image/png' });
+    return res.end(PIXEL_PNG);
+  }
+  if (req.method === 'GET' && url.pathname === '/api/v1/products') {
+    return listCatalog(url, res);
+  }
+  if (req.method === 'GET' && url.pathname === '/api/v1/categories') {
+    const sorted = [...categories].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    return send(res, 200, { message: 'Categories retrieved successfully.', data: sorted });
   }
   if (req.method === 'POST' && url.pathname === '/api/v1/auth/login') {
     return login(req, res);

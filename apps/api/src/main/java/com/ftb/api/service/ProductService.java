@@ -94,7 +94,9 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public PaginatedResponse<ProductCardResponse> getPublicProducts(String region, Optional<UUID> categoryId, Pageable pageable) {
-        Specification<Product> spec = ProductSpecification.hasStatus(ProductStatus.ACTIVE).and(ProductSpecification.inRegion(region));
+        Specification<Product> spec = ProductSpecification.hasStatus(ProductStatus.ACTIVE)
+                .and(ProductSpecification.inRegion(region))
+                .and(ProductSpecification.fromActiveFarmers());
 
         if (categoryId.isPresent()) {
             spec = spec.and(ProductSpecification.inCategory(categoryId.get()));

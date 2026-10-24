@@ -76,9 +76,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // The backend rejected our token (expired or revoked): end the browser session too.
     res.setHeader('Set-Cookie', serializeClearedAccessTokenCookie());
   }
-  const contentType = upstream.headers.get('content-type');
-  if (contentType) {
-    res.setHeader('Content-Type', contentType);
+  for (const header of ['content-type', 'cache-control']) {
+    const value = upstream.headers.get(header);
+    if (value) {
+      res.setHeader(header, value);
+    }
   }
   res.status(upstream.status);
   return res.send(Buffer.from(await upstream.arrayBuffer()));

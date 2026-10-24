@@ -26,6 +26,9 @@ public interface ProductMapper {
     ProductResponse toProductResponse(Product product);
 
     @Mapping(target = "primaryImageUrl", expression = "java(getPrimaryImageUrl(product.getImageUrls()))")
+    @Mapping(source = "price", target = "priceCents", qualifiedByName = "bigDecimalToCentsInt")
+    @Mapping(source = "farmer.fullName", target = "farmerName")
+    @Mapping(source = "category.name", target = "categoryName")
     ProductCardResponse toProductCardResponse(Product product);
 
     default String getPrimaryImageUrl(List<String> imageUrls) {
@@ -36,6 +39,7 @@ public interface ProductMapper {
     }
 
     @Mapping(source = "farmer", target = "farmer")
+    @Mapping(source = "price", target = "priceCents", qualifiedByName = "bigDecimalToCentsInt")
     ProductDetailResponse toProductDetailResponse(Product product);
 
     FarmerInfo toFarmerInfo(User farmer);

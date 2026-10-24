@@ -5,6 +5,7 @@ import { BuyerProfileForm } from '@/components/buyer/BuyerProfileForm';
 import { Card, CardContent } from '@/components/ui/card';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { requireBuyerSession, type SessionPageProps } from '@/lib/pageSession';
+import { parseRegion, saveRegion } from '@/lib/region';
 import { ApiError } from '@/services/apiClient';
 
 export default function BuyerProfilePage({ email }: SessionPageProps) {
@@ -32,6 +33,9 @@ export default function BuyerProfilePage({ email }: SessionPageProps) {
               profile={profile}
               onSaved={(saved) => {
                 mutate(saved, { revalidate: false });
+                // Keep the catalog showing produce from the buyer's (possibly new) region.
+                const region = parseRegion(saved.region);
+                if (region) saveRegion(region);
                 toast.success('Your profile has been saved.');
               }}
             />
