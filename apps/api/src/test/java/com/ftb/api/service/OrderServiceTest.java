@@ -54,6 +54,10 @@ class OrderServiceTest {
     private OrderItemRepository orderItemRepository;
     @Spy
     private com.ftb.api.mapper.RatingMapper ratingMapper = new com.ftb.api.mapper.RatingMapperImpl();
+    @Mock
+    private com.ftb.api.repository.DisputeRepository disputeRepository;
+    @Spy
+    private com.ftb.api.mapper.DisputeMapper disputeMapper = new com.ftb.api.mapper.DisputeMapperImpl();
 
     @InjectMocks
     private OrderService orderService;

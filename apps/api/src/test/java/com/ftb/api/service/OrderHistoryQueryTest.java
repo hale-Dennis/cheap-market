@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /** The buyer's order history against real PostgreSQL (DB_URL), including the computed item count. */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({OrderService.class, OrderMapperImpl.class, com.ftb.api.mapper.RatingMapperImpl.class, DeliveryFeeService.class, AdminNotifier.class,
+@Import({OrderService.class, OrderMapperImpl.class, com.ftb.api.mapper.RatingMapperImpl.class, com.ftb.api.mapper.DisputeMapperImpl.class, DeliveryFeeService.class, AdminNotifier.class,
         OrderHistoryQueryTest.Config.class})
 class OrderHistoryQueryTest {
 

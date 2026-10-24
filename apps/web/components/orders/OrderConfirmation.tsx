@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { useState } from 'react';
-import type { Address, OrderDetail, OrderFarmer } from '@cheap-market/shared-types';
+import type { Address, Dispute, DisputeStatus, OrderDetail, OrderFarmer } from '@cheap-market/shared-types';
 
+import { DisputeFormModal } from '@/components/disputes/DisputeFormModal';
 import { StatusBadge } from '@/components/orders/StatusBadge';
 import { RateFarmerModal } from '@/components/ratings/RateFarmerModal';
 import { Stars } from '@/components/ratings/Stars';
@@ -79,6 +80,53 @@ function FarmerRatings({ order, onRated }: { order: OrderDetail; onRated: () => 
         ))}
       </ul>
       <RateFarmerModal orderId={order.id} farmer={rating} onClose={() => setRating(null)} onRated={onRated} />
+    </section>
+  );
+}
+
+const DISPUTE_STATUS_TEXT: Record<DisputeStatus, string> = {
+  OPEN: "We've received your report and will review it soon.",
+  UNDER_REVIEW: 'Our team is looking into it.',
+  RESOLVED: 'This issue has been resolved.',
+};
+
+/** The issue the buyer reported on this order. */
+function ReportedIssue({ dispute }: { dispute: Dispute }) {
+  return (
+    <section aria-labelledby="issue-heading" className="border-t pt-4">
+      <h2 id="issue-heading" className="mb-1 text-lg font-semibold">
+        Issue reported
+      </h2>
+      <p className="text-sm text-muted-foreground">
+        {formatPlacedAt(dispute.createdAt)} · {DISPUTE_STATUS_TEXT[dispute.status]}
+      </p>
+      <p className="mt-2 whitespace-pre-line break-words rounded-md bg-muted p-3 text-sm">{dispute.reason}</p>
+    </section>
+  );
+}
+
+/** "Report issue" for a completed order that hasn't been reported yet. */
+function ReportIssue({ order, onReported }: { order: OrderDetail; onReported: () => void }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <section aria-labelledby="report-heading" className="border-t pt-4">
+      <h2 id="report-heading" className="mb-1 text-lg font-semibold">
+        Problem with this order?
+      </h2>
+      <p className="mb-3 text-sm text-muted-foreground">
+        If something was missing, wrong or not good enough, let us know and we&apos;ll sort it out.
+      </p>
+      <Button variant="outline" onClick={() => setOpen(true)}>
+        Report issue
+      </Button>
+      <DisputeFormModal
+        orderId={order.id}
+        orderNumber={order.orderNumber}
+        open={open}
+        onOpenChange={setOpen}
+        onReported={onReported}
+      />
     </section>
   );
 }
@@ -194,8 +242,14 @@ export function OrderConfirmation({ orderId, variant = 'confirmation' }: OrderCo
           </dl>
         </section>
 
-        {order.status === 'COMPLETED' && order.farmers.length > 0 && (
+        {/* A disputed order was still delivered, so its farmers can still be rated. */}
+        {(order.status === 'COMPLETED' || order.status === 'DISPUTED') && order.farmers.length > 0 && (
           <FarmerRatings order={order} onRated={() => mutate()} />
+        )}
+        {order.dispute ? (
+          <ReportedIssue dispute={order.dispute} />
+        ) : (
+          order.status === 'COMPLETED' && <ReportIssue order={order} onReported={() => mutate()} />
         )}
       </Card>
 

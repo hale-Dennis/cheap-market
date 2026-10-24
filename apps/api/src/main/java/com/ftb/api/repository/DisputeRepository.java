@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
+import java.util.Optional;
 
 @Repository
 public interface DisputeRepository extends JpaRepository<Dispute, UUID> {
@@ -15,4 +16,6 @@ public interface DisputeRepository extends JpaRepository<Dispute, UUID> {
      * @return true if a dispute for the order exists, false otherwise.
      */
     boolean existsByOrderId(UUID orderId);
+
+    Optional<Dispute> findByOrderId(UUID orderId);
 }

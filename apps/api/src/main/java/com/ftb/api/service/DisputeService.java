@@ -12,17 +12,15 @@ import com.ftb.api.exception.ResourceNotFoundException;
 import com.ftb.api.mapper.DisputeMapper;
 import com.ftb.api.model.Dispute;
 import com.ftb.api.model.Order;
-import com.ftb.api.model.User;
 import com.ftb.api.model.DisputeStatus;
 import com.ftb.api.model.OrderStatus;
 import com.ftb.api.repository.DisputeRepository;
 import com.ftb.api.repository.OrderRepository;
-import com.ftb.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,39 +36,56 @@ public class DisputeService {
 
     private final DisputeRepository disputeRepository;
     private final OrderRepository orderRepository;
-    private final UserRepository userRepository;
     private final DisputeMapper disputeMapper;
+    private final AdminNotifier adminNotifier;
 
+    public static final String ORDER_NOT_COMPLETED = "ORDER_NOT_COMPLETED";
+    public static final String ALREADY_DISPUTED = "ALREADY_DISPUTED";
+    /** How much of the buyer's description goes into the admin notification. */
+    private static final int REASON_PREVIEW = 200;
+
+    /**
+     * Reports a problem with one of the buyer's completed orders: records the dispute, marks the order
+     * DISPUTED and notifies admins, all in one transaction. Another buyer's order is reported as not found.
+     */
     @Transactional
     public DisputeResponseDto createDispute(String buyerEmail, CreateDisputeRequest request) {
-
-        User buyer = userRepository.findByEmail(buyerEmail)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + buyerEmail));
-        Order order = orderRepository.findById(request.getOrderId())
+        // Lock the order: a simultaneous second report waits here, then finds the first and gets a 409.
+        Order order = orderRepository.lockById(request.getOrderId())
+                .filter(o -> o.getBuyer().getEmail().equals(buyerEmail))
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + request.getOrderId()));
 
-        if (!order.getBuyer().getId().equals(buyer.getId())) {
-            throw new InvalidRequestException("You can only dispute orders that you placed.");
+        if (disputeRepository.existsByOrderId(order.getId())) {
+            throw alreadyDisputed();
         }
         if (order.getStatus() != OrderStatus.COMPLETED) {
-            throw new InvalidRequestException("You can only dispute orders that are completed.");
-        }
-        if (disputeRepository.existsByOrderId(order.getId())) {
-            throw new ConflictException("A dispute for this order has already been submitted.");
+            throw new InvalidRequestException(ORDER_NOT_COMPLETED, "You can report an issue once the order is completed.");
         }
 
         order.setStatus(OrderStatus.DISPUTED);
-        orderRepository.save(order);
+        Dispute dispute = Dispute.builder()
+                .order(order)
+                .reason(request.getReason().strip())
+                .status(DisputeStatus.OPEN)
+                .build();
+        try {
+            disputeRepository.saveAndFlush(dispute);
+        } catch (DataIntegrityViolationException e) {
+            throw alreadyDisputed();
+        }
 
-        Dispute newDispute = new Dispute();
-        newDispute.setOrder(order);
-        newDispute.setReason(request.getReason());
-        newDispute.setStatus(DisputeStatus.OPEN);
-        disputeRepository.save(newDispute);
+        adminNotifier.notifyDisputeOpened(order.getId(), disputeMessage(order, dispute.getReason()));
+        return disputeMapper.toDisputeResponseDto(dispute);
+    }
 
-        log.info("New dispute submitted for order: {}. Admin notification required.", order.getId());
+    private static String disputeMessage(Order order, String reason) {
+        String preview = reason.length() > REASON_PREVIEW ? reason.substring(0, REASON_PREVIEW - 1) + "…" : reason;
+        return String.format("Issue reported on order %s by %s: \"%s\"",
+                order.getOrderNumber(), order.getBuyer().getFullName(), preview);
+    }
 
-        return disputeMapper.toDisputeResponseDto(newDispute);
+    private static ConflictException alreadyDisputed() {
+        return new ConflictException(ALREADY_DISPUTED, "You've already reported an issue with this order.");
     }
 
     @Transactional(readOnly = true)

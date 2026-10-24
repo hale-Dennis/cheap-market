@@ -47,7 +47,8 @@ public class RatingService {
                 .filter(o -> o.getBuyer().getEmail().equals(buyerEmail))
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + request.getOrderId()));
 
-        if (order.getStatus() != OrderStatus.COMPLETED) {
+        // A disputed order was still delivered, so its farmers can be rated too (often the point of the dispute).
+        if (order.getStatus() != OrderStatus.COMPLETED && order.getStatus() != OrderStatus.DISPUTED) {
             throw new InvalidRequestException(ORDER_NOT_COMPLETED, "You can rate farmers once the order is completed.");
         }
         boolean farmerInOrder = order.getItems().stream()

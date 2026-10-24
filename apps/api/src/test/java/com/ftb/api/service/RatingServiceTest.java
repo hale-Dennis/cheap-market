@@ -127,6 +127,17 @@ class RatingServiceTest {
     }
 
     @Test
+    void createRating_DisputedOrder_CanStillBeRated() {
+        order.setStatus(OrderStatus.DISPUTED);
+        orderFound();
+        when(userRepository.lockById(ama.getId())).thenReturn(Optional.of(ama));
+        when(ratingRepository.countByFarmerId(ama.getId())).thenReturn(1L);
+        when(ratingRepository.averageScoreByFarmerId(ama.getId())).thenReturn(1.0);
+
+        assertEquals(1, ratingService.createRating(EMAIL, request(ama, 1, "Rotten okro")).getScore());
+    }
+
+    @Test
     void createRating_FarmerNotInTheOrder_Returns422Code() {
         orderFound();
 

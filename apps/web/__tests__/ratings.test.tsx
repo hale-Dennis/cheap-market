@@ -172,6 +172,7 @@ describe('Rating from the order page', () => {
     pickupLocation: null,
     createdAt: '2026-10-24T14:30:00Z',
     farmers: [{ ...AMA, rating: { ...SAVED, farmerId: AMA.farmerId, score: 5, comment: 'Lovely okro' } }, KOFI],
+    dispute: null,
   };
 
   it('shows each farmer with the buyer’s rating, or a button to rate them', async () => {
