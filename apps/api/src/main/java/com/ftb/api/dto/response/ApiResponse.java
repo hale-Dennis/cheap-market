@@ -19,5 +19,7 @@ public class ApiResponse<T> {
     private Instant timestamp = Instant.now();
     private int status;
     private String message;
+    /** Machine-readable error code for errors clients handle specially, e.g. INACTIVE_PRODUCT. */
+    private String code;
     private T data;
 }

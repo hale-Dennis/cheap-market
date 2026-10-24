@@ -25,8 +25,14 @@ public final class ResponseHandler {
      * @return A ResponseEntity containing the formatted error.
      */
     public static ResponseEntity<ApiResponse<Object>> errorResponse(String message, HttpStatus status) {
+        return errorResponse(null, message, status);
+    }
+
+    /** An error response carrying a machine-readable {@code code} (omitted from the JSON when null). */
+    public static ResponseEntity<ApiResponse<Object>> errorResponse(String code, String message, HttpStatus status) {
         ApiResponse<Object> response = ApiResponse.builder()
                 .status(status.value())
+                .code(code)
                 .message(message)
                 .data(null)
                 .build();

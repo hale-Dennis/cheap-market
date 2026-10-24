@@ -1,15 +1,13 @@
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
-import { useSWRConfig } from 'swr';
 import { toast } from 'sonner';
 import type { UserRole } from '@cheap-market/shared-types';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CART_KEY } from '@/hooks/useCart';
+import { useCart, useCartActions } from '@/hooks/useCart';
 import { ApiError } from '@/services/apiClient';
-import { setCartItem } from '@/services/cartService';
 
 const MAX_QUANTITY = 99;
 
@@ -22,7 +20,9 @@ interface AddToCartProps {
 }
 
 export function AddToCart({ productId, productName, unit, viewerRole }: AddToCartProps) {
-  const { mutate } = useSWRConfig();
+  const isBuyer = viewerRole === 'BUYER';
+  const { data: cart } = useCart(isBuyer);
+  const actions = useCartActions();
   const [quantity, setQuantity] = useState('1');
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string>();
@@ -64,10 +64,13 @@ export function AddToCart({ productId, productName, unit, viewerRole }: AddToCar
     setAdding(true);
     setError(undefined);
     try {
-      const cart = await setCartItem({ productId, quantity: parsed });
-      // Share the updated cart with everything showing it (e.g. the header count).
-      await mutate(CART_KEY, cart, { revalidate: false });
-      toast.success(`${parsed} × ${productName} (${unit}) is in your cart.`);
+      const inCart = await actions.addItem(productId, parsed, cart);
+      toast.success(
+        inCart === parsed
+          ? `Added ${parsed} × ${productName} (${unit}) to your cart.`
+          : `Added ${parsed} more. You now have ${inCart} × ${productName} in your cart.`,
+        { action: { label: 'View cart', onClick: () => window.location.assign('/cart') } },
+      );
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not add to your cart. Please try again.');
     } finally {

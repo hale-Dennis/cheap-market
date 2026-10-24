@@ -106,12 +106,22 @@ const carts = new Map();
 function cartFor(email) {
   const items = [...(carts.get(email) ?? new Map())].map(([productId, quantity]) => {
     const product = products.find((p) => p.id === productId);
-    return { productId, name: product.name, priceCentsAtAdd: product.priceCents, quantity, primaryImageUrl: product.imageUrls[0] ?? null };
+    return {
+      productId,
+      name: product.name,
+      unit: product.unit,
+      farmerName: farmers.find((f) => f.id === product.farmerId)?.fullName,
+      priceCents: product.priceCents,
+      quantity,
+      lineTotalCents: product.priceCents * quantity,
+      primaryImageUrl: product.imageUrls[0] ?? null,
+      available: product.listingStatus === 'ACTIVE',
+    };
   });
   return {
     items,
     totalItems: items.reduce((sum, item) => sum + item.quantity, 0),
-    subtotalCents: items.reduce((sum, item) => sum + item.quantity * item.priceCentsAtAdd, 0),
+    subtotalCents: items.filter((i) => i.available).reduce((sum, item) => sum + item.lineTotalCents, 0),
   };
 }
 
@@ -121,10 +131,17 @@ async function handleCart(req, res, email) {
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
       return send(res, 400, { message: 'Validation failed: quantity: Quantity must be between 1 and 99' });
     }
-    if (!productDetail(productId)) return send(res, 404, { message: `Product not found with id: ${productId}` });
+    if (!products.some((p) => p.id === productId)) return send(res, 404, { message: `Product not found with id: ${productId}` });
+    if (!productDetail(productId)) {
+      return send(res, 422, { code: 'INACTIVE_PRODUCT', message: 'This product is no longer available and cannot be added to the cart.' });
+    }
     if (!carts.has(email)) carts.set(email, new Map());
     carts.get(email).set(productId, quantity);
     return send(res, 200, { message: 'Cart updated successfully.', data: cartFor(email) });
+  }
+  if (req.method === 'DELETE') {
+    carts.set(email, new Map());
+    return send(res, 200, { message: 'Cart cleared successfully.', data: cartFor(email) });
   }
   return send(res, 200, { message: 'Cart retrieved successfully.', data: cartFor(email) });
 }
@@ -358,6 +375,13 @@ createServer(async (req, res) => {
     return detail
       ? send(res, 200, { message: 'Product details retrieved successfully.', data: detail })
       : send(res, 404, { message: `Product not found with id: ${detailMatch[1]}` });
+  }
+  const cartItemMatch = /^\/api\/v1\/cart\/items\/([^/]+)$/.exec(url.pathname);
+  if (cartItemMatch && req.method === 'DELETE') {
+    const session = await sessionFromRequest(req);
+    if (!session) return send(res, 401, { message: 'Authentication is required to access this resource.' });
+    carts.get(session.email)?.delete(cartItemMatch[1]);
+    return send(res, 200, { message: 'Item removed from cart successfully.', data: cartFor(session.email) });
   }
   if (url.pathname === '/api/v1/cart') {
     const session = await sessionFromRequest(req);

@@ -70,7 +70,8 @@ test.describe('Product detail', () => {
     await page.getByLabel('Quantity').fill('2');
     await page.getByRole('button', { name: 'Add to cart' }).click();
 
-    await expect(page.getByText(`2 × ${name} (per kg) is in your cart.`)).toBeVisible();
+    // The stub buyer's cart is shared by tests, so this may add to an earlier quantity.
+    await expect(page.getByText(new RegExp(`Added 2 (× ${name} \\(per kg\\) to your cart|more)`))).toBeVisible();
     // The stub buyer's cart is shared by tests, so check the header count includes these 2.
     const count = Number(/Cart · (\d+)/.exec(await page.getByText(/Cart · \d+/).innerText())![1]);
     expect(count).toBeGreaterThanOrEqual(2);

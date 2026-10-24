@@ -2,10 +2,10 @@ import type { UserRole } from '@cheap-market/shared-types';
 
 import { safeRedirectPath } from '@/lib/redirect';
 
-/** Where each role lands after signing in, and the URL prefix only that role may visit. */
-const AREAS: Partial<Record<UserRole, { home: string; prefix: string }>> = {
-  ADMIN: { home: '/admin', prefix: '/admin' },
-  BUYER: { home: '/buyer/profile', prefix: '/buyer' },
+/** Where each role lands after signing in, and the URL prefixes only that role may visit. */
+const AREAS: Partial<Record<UserRole, { home: string; prefixes: string[] }>> = {
+  ADMIN: { home: '/admin', prefixes: ['/admin'] },
+  BUYER: { home: '/buyer/profile', prefixes: ['/buyer', '/cart'] },
 };
 
 export function homeForRole(role: UserRole): string {
@@ -15,7 +15,7 @@ export function homeForRole(role: UserRole): string {
 /** The role whose area contains `pathname`, if any. */
 export function roleForPath(pathname: string): UserRole | null {
   for (const [role, area] of Object.entries(AREAS)) {
-    if (pathname === area.prefix || pathname.startsWith(`${area.prefix}/`)) {
+    if (area.prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
       return role as UserRole;
     }
   }

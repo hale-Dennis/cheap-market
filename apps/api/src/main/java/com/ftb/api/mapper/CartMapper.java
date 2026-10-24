@@ -2,11 +2,11 @@ package com.ftb.api.mapper;
 
 import java.util.List;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import com.ftb.api.model.Cart;
 import com.ftb.api.model.CartItem;
-import org.mapstruct.AfterMapping;
-import org.mapstruct.MappingTarget;
+import com.ftb.api.model.Product;
+import com.ftb.api.model.ProductStatus;
+import com.ftb.api.model.AccountStatus;
 import com.ftb.api.dto.response.CartItemDto;
 import com.ftb.api.dto.response.CartResponseDto;
 
@@ -14,15 +14,36 @@ import com.ftb.api.dto.response.CartResponseDto;
 @Mapper(componentModel = "spring")
 public interface CartMapper {
 
-    @Mapping(source = "product.id", target = "productId")
-    @Mapping(source = "product.name", target = "name")
-    @Mapping(target = "primaryImageUrl", expression = "java(getPrimaryImageUrl(item.getProduct().getImageUrls()))")
-    CartItemDto toCartItemDto(CartItem item);
+    /** Whether a product can be bought: an active listing from a farmer who isn't suspended. */
+    static boolean isAvailable(Product product) {
+        return product.getListingStatus() == ProductStatus.ACTIVE
+                && product.getFarmer().getAccountStatus() == AccountStatus.ACTIVE;
+    }
 
-    @Mapping(source = "totalItems", target = "totalItems")
-    @Mapping(source = "subtotalCents", target = "subtotalCents")
-    CartResponseDto toCartResponseDto(Cart cart);
+    default CartItemDto toCartItemDto(CartItem item) {
+        Product product = item.getProduct();
+        int priceCents = product.getPrice().movePointRight(2).intValueExact();
+        return CartItemDto.builder()
+                .productId(product.getId())
+                .name(product.getName())
+                .unit(product.getUnit())
+                .farmerName(product.getFarmer().getFullName())
+                .priceCents(priceCents)
+                .quantity(item.getQuantity())
+                .lineTotalCents((long) priceCents * item.getQuantity())
+                .primaryImageUrl(getPrimaryImageUrl(product.getImageUrls()))
+                .available(isAvailable(product))
+                .build();
+    }
 
+    default CartResponseDto toCartResponseDto(Cart cart) {
+        List<CartItemDto> items = cart.getItems().stream().map(this::toCartItemDto).toList();
+        return CartResponseDto.builder()
+                .items(items)
+                .totalItems(items.stream().mapToInt(CartItemDto::getQuantity).sum())
+                .subtotalCents(items.stream().filter(CartItemDto::isAvailable).mapToLong(CartItemDto::getLineTotalCents).sum())
+                .build();
+    }
 
     default String getPrimaryImageUrl(List<String> imageUrls) {
         if (imageUrls == null || imageUrls.isEmpty()) {

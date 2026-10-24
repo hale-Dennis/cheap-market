@@ -108,7 +108,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidRequestException.class)
     public ResponseEntity<ApiResponse<Object>> handleInvalidRequestException(InvalidRequestException ex) {
-        return ResponseHandler.errorResponse(ex.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
+        return ResponseHandler.errorResponse(ex.getCode(), ex.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
