@@ -26,7 +26,8 @@ public class User {
     @Column(nullable = false)
     private String fullName;
 
-    @Column(nullable = false, unique = true)
+    /** Required for users who log in (admins, buyers); optional for farmers. Postgres allows many NULLs under UNIQUE. */
+    @Column(unique = true)
     private String email;
 
     @Column(nullable = false)

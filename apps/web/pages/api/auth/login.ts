@@ -52,7 +52,7 @@ export default async function handler(
 
   const accessToken = body?.data?.accessToken;
   const session = await verifyAccessToken(accessToken);
-  if (!session) {
+  if (!accessToken || !session) {
     return res
       .status(502)
       .json({ message: 'Received an invalid session from the server.' });

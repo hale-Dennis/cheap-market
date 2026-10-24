@@ -52,6 +52,11 @@ public class GlobalExceptionHandler {
         return ResponseHandler.errorResponse(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(InvalidRequestException.class)
+    public ResponseEntity<ApiResponse<Object>> handleInvalidRequestException(InvalidRequestException ex) {
+        return ResponseHandler.errorResponse(ex.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse<Object>> handleConstraintViolationException(ConstraintViolationException ex) {
         String errors = ex.getConstraintViolations().stream()

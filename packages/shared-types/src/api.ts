@@ -5,3 +5,12 @@ export interface ApiResponse<T> {
   message: string;
   data?: T;
 }
+
+/** A page of results (see PaginatedResponse.java). `currentPage` is zero-based. */
+export interface PaginatedResponse<T> {
+  content: T[];
+  currentPage: number;
+  totalPages: number;
+  totalElements: number;
+  size: number;
+}

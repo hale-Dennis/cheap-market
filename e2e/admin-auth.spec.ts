@@ -1,13 +1,8 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { SignJWT } from 'jose';
 
 import { ADMIN, BASE_URL, BUYER, E2E_JWT_SECRET } from './support/config';
-
-async function signIn(page: Page, credentials: { email: string; password: string }) {
-  await page.getByLabel('Email').fill(credentials.email);
-  await page.getByLabel('Password').fill(credentials.password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
-}
+import { signIn } from './support/session';
 
 async function signToken(role: string, key: Uint8Array) {
   return new SignJWT({ role })

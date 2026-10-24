@@ -1,19 +1,29 @@
 package com.ftb.api.service;
 
 import java.util.List;
+import java.util.UUID;
+import java.util.Optional;
 import org.mockito.Mock;
 import java.util.Collections;
 import com.ftb.api.model.User;
 import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import com.ftb.api.model.UserRole;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import static org.mockito.Mockito.*;
 import com.ftb.api.mapper.FarmerMapper;
+import com.ftb.api.model.AccountStatus;
 import org.springframework.data.domain.Page;
 import com.ftb.api.repository.UserRepository;
+import com.ftb.api.repository.RatingRepository;
+import com.ftb.api.repository.ProductRepository;
 import static org.mockito.ArgumentMatchers.any;
 import com.ftb.api.exception.ConflictException;
 import com.ftb.api.dto.response.FarmerResponse;
+import com.ftb.api.dto.request.UpdateFarmerRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageImpl;
 import static org.junit.jupiter.api.Assertions.*;
@@ -22,8 +32,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import com.ftb.api.dto.request.CreateFarmerRequest;
+import com.ftb.api.exception.ResourceNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 
 
 @ExtendWith(MockitoExtension.class)
@@ -35,51 +45,81 @@ class FarmerServiceTest {
     private FarmerMapper farmerMapper;
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private ProductRepository productRepository;
+    @Mock
+    private RatingRepository ratingRepository;
 
     @InjectMocks
     private FarmerService farmerService;
 
     @Test
-    void createFarmer_Success_ShouldReturnFarmerResponse() {
-
-        CreateFarmerRequest request = new CreateFarmerRequest("John Doe", "john.doe@test.com", "1234567890", "Test Region");
-        when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
-        when(userRepository.existsByPhoneNumber(request.getPhoneNumber())).thenReturn(false);
-        when(userRepository.save(any(User.class))).thenReturn(new User());
-        when(farmerMapper.toFarmerResponse(any(User.class))).thenReturn(new FarmerResponse());
+    void createFarmer_Success_ShouldPersistActiveFarmerWithNormalisedContactDetails() {
+        CreateFarmerRequest request = new CreateFarmerRequest(" Ama Mensah ", " Ama@Test.com ", "024 123 4567", "ASHANTI");
+        when(farmerMapper.toUser(request)).thenReturn(User.builder().region("ASHANTI").build());
+        when(passwordEncoder.encode(anyString())).thenReturn("hashed-temporary-password");
+        when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        FarmerResponse expected = FarmerResponse.builder().fullName("Ama Mensah").build();
+        when(farmerMapper.toFarmerResponse(any(User.class))).thenReturn(expected);
 
         FarmerResponse response = farmerService.createFarmer(request);
 
-        assertNotNull(response);
-        verify(userRepository, times(1)).save(any(User.class));
-        verify(passwordEncoder, times(1)).encode(anyString());
+        assertSame(expected, response);
+        ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).saveAndFlush(saved.capture());
+        User farmer = saved.getValue();
+        assertEquals("Ama Mensah", farmer.getFullName());
+        assertEquals("ama@test.com", farmer.getEmail());
+        assertEquals("+233241234567", farmer.getPhoneNumber());
+        assertEquals("ASHANTI", farmer.getRegion());
+        assertEquals(UserRole.FARMER, farmer.getRole());
+        assertEquals(AccountStatus.ACTIVE, farmer.getAccountStatus());
+        assertEquals("hashed-temporary-password", farmer.getPasswordHash());
+        verify(userRepository).existsByEmail("ama@test.com");
+        verify(userRepository).existsByPhoneNumber("+233241234567");
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"", "   "})
+    void createFarmer_WithoutEmail_ShouldStoreNullEmailAndSkipEmailCheck(String email) {
+        CreateFarmerRequest request = new CreateFarmerRequest("Kwame Asante", email, "0201234567", "VOLTA");
+        when(farmerMapper.toUser(request)).thenReturn(User.builder().region("VOLTA").build());
+        when(userRepository.saveAndFlush(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        farmerService.createFarmer(request);
+
+        ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).saveAndFlush(saved.capture());
+        assertNull(saved.getValue().getEmail());
+        assertEquals("+233201234567", saved.getValue().getPhoneNumber());
+        verify(userRepository, never()).existsByEmail(any());
+        verify(userRepository).existsByPhoneNumber("+233201234567");
     }
 
     @Test
     void createFarmer_EmailAlreadyExists_ShouldThrowConflictException() {
-        CreateFarmerRequest request = new CreateFarmerRequest("John Doe", "john.doe@test.com", "1234567890", "Test Region");
-        when(userRepository.existsByEmail(request.getEmail())).thenReturn(true);
+        CreateFarmerRequest request = new CreateFarmerRequest("John Doe", "john.doe@test.com", "0241234567", "ASHANTI");
+        when(userRepository.existsByEmail("john.doe@test.com")).thenReturn(true);
 
         ConflictException exception = assertThrows(ConflictException.class, () -> farmerService.createFarmer(request));
         assertEquals("A user with this email already exists.", exception.getMessage());
-        verify(userRepository, never()).save(any(User.class));
+        verify(userRepository, never()).saveAndFlush(any(User.class));
     }
 
     @Test
-    void createFarmer_PhoneNumberAlreadyExists_ShouldThrowConflictException() {
-
-        CreateFarmerRequest request = new CreateFarmerRequest("Jane Doe", "jane.doe@test.com", "0987654321", "Test Region");
-        when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
-        when(userRepository.existsByPhoneNumber(request.getPhoneNumber())).thenReturn(true);
+    void createFarmer_PhoneNumberAlreadyExistsInAnotherFormat_ShouldThrowConflictException() {
+        CreateFarmerRequest request = new CreateFarmerRequest("Jane Doe", "jane.doe@test.com", "+233 24 123 4567", "ASHANTI");
+        when(userRepository.existsByEmail("jane.doe@test.com")).thenReturn(false);
+        when(userRepository.existsByPhoneNumber("+233241234567")).thenReturn(true);
 
         ConflictException exception = assertThrows(ConflictException.class, () -> farmerService.createFarmer(request));
         assertEquals("A user with this phone number already exists.", exception.getMessage());
-        verify(userRepository, never()).save(any(User.class));
+        verify(userRepository, never()).saveAndFlush(any(User.class));
     }
 
     @Test
     void getAllFarmers_ShouldReturnPaginatedResponse() {
-
         Pageable pageable = PageRequest.of(0, 10);
         User farmer = User.builder().fullName("Test Farmer").build();
         List<User> farmerList = Collections.singletonList(farmer);
@@ -90,11 +130,39 @@ class FarmerServiceTest {
 
         PaginatedResponse<FarmerResponse> response = farmerService.getAllFarmers(pageable);
 
-        assertNotNull(response);
         assertEquals(1, response.getContent().size());
         assertEquals(0, response.getCurrentPage());
         assertEquals(1, response.getTotalPages());
         assertEquals(1, response.getTotalElements());
         verify(userRepository, times(1)).findByRole(UserRole.FARMER, pageable);
+    }
+
+    @Test
+    void updateFarmer_ShouldNormalisePhoneNumberBeforeCheckingDuplicates() {
+        UUID id = UUID.randomUUID();
+        User farmer = User.builder().id(id).phoneNumber("+233241234567").build();
+        UpdateFarmerRequest request = new UpdateFarmerRequest();
+        request.setFullName("Ama Mensah");
+        request.setPhoneNumber("0241234567");
+        request.setRegion("VOLTA");
+        request.setAccountStatus(AccountStatus.SUSPENDED);
+        when(userRepository.findById(id)).thenReturn(Optional.of(farmer));
+        when(userRepository.save(farmer)).thenReturn(farmer);
+        when(farmerMapper.toFarmerResponse(farmer)).thenReturn(new FarmerResponse());
+
+        farmerService.updateFarmer(id, request);
+
+        verify(userRepository, never()).existsByPhoneNumber(any());
+        assertEquals("+233241234567", farmer.getPhoneNumber());
+        assertEquals("VOLTA", farmer.getRegion());
+        assertEquals(AccountStatus.SUSPENDED, farmer.getAccountStatus());
+    }
+
+    @Test
+    void updateFarmer_UnknownId_ShouldThrowResourceNotFound() {
+        UUID id = UUID.randomUUID();
+        when(userRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> farmerService.updateFarmer(id, new UpdateFarmerRequest()));
     }
 }
