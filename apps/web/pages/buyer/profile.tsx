@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { toast } from 'sonner';
 
 import { BuyerLayout } from '@/components/buyer/BuyerLayout';
@@ -15,7 +16,10 @@ export default function BuyerProfilePage({ email }: SessionPageProps) {
     <BuyerLayout title="Your profile" email={email}>
       <h1 className="text-2xl font-bold tracking-tight">Your profile</h1>
       <p className="mt-1 text-muted-foreground">
-        Manage your details and where we deliver your orders.
+        Manage your details and where we deliver your orders.{' '}
+        <Link href="/orders" className="font-medium text-primary hover:underline">
+          View my orders
+        </Link>
       </p>
 
       <Card className="mt-6">

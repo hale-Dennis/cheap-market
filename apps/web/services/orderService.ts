@@ -1,4 +1,10 @@
-import type { OrderDetail, PlacedOrder, PlaceOrderRequest } from '@cheap-market/shared-types';
+import type {
+  OrderDetail,
+  OrderSummary,
+  PaginatedResponse,
+  PlacedOrder,
+  PlaceOrderRequest,
+} from '@cheap-market/shared-types';
 
 import { apiRequest } from '@/services/apiClient';
 
@@ -12,6 +18,14 @@ export function placeOrder(request: PlaceOrderRequest, idempotencyKey: string): 
     headers: { 'Idempotency-Key': idempotencyKey },
     body: JSON.stringify(request),
   });
+}
+
+export const ORDERS_PAGE_SIZE = 10;
+
+/** The buyer's orders, newest first. @param page Zero-based. */
+export function listOrders(page = 0): Promise<PaginatedResponse<OrderSummary>> {
+  const params = new URLSearchParams({ page: String(page), size: String(ORDERS_PAGE_SIZE) });
+  return apiRequest<PaginatedResponse<OrderSummary>>(`/orders?${params}`);
 }
 
 export function getOrder(orderId: string): Promise<OrderDetail> {

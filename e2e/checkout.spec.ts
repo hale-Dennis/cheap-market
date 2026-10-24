@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+
+import { scanWcag } from './support/a11y';
 
 import { seedCategory, seedFarmer, seedListing, seedPickupLocation } from './support/api';
 
@@ -111,7 +112,6 @@ test.describe('Checkout', () => {
     await page.getByRole('button', { name: 'Place order' }).click();
     await expect(page.getByRole('alert').filter({ hasText: 'Choose a pickup point.' }).first()).toBeVisible();
 
-    const scan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
-    expect(scan.violations).toEqual([]);
+    expect(await scanWcag(page)).toEqual([]);
   });
 });

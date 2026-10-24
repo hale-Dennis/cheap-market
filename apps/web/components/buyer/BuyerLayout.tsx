@@ -27,6 +27,9 @@ export function BuyerLayout({ title, email, children }: BuyerLayoutProps) {
               <Link href="/products" className="text-sm text-muted-foreground hover:text-foreground">
                 Produce
               </Link>
+              <Link href="/orders" className="whitespace-nowrap text-sm text-muted-foreground hover:text-foreground">
+                My orders
+              </Link>
             </div>
             <div className="flex items-center gap-3">
               <CartLink />

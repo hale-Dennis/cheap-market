@@ -13,6 +13,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import com.ftb.api.service.storage.ImageStorageException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -78,6 +81,29 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
         String message = "Invalid value '" + ex.getValue() + "' for parameter '" + ex.getName() + "'.";
         return ResponseHandler.errorResponse(message, HttpStatus.BAD_REQUEST);
+    }
+
+    /** e.g. PUT on an endpoint that only supports PATCH; previously fell through to a 500. */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        ResponseEntity<ApiResponse<Object>> response = ResponseHandler.errorResponse(
+                "Method " + ex.getMethod() + " is not supported for this endpoint.", HttpStatus.METHOD_NOT_ALLOWED);
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .headers(headers -> {
+                    if (ex.getSupportedHttpMethods() != null) headers.setAllow(ex.getSupportedHttpMethods());
+                })
+                .body(response.getBody());
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex) {
+        return ResponseHandler.errorResponse("Content type " + ex.getContentType() + " is not supported; send JSON.",
+                HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleNoResourceFound(NoResourceFoundException ex) {
+        return ResponseHandler.errorResponse("No endpoint found at " + ex.getResourcePath() + ".", HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(BadRequestException.class)

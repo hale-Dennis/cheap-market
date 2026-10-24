@@ -65,6 +65,29 @@ class CheckoutEndpointsTest {
     }
 
     @Test
+    void wrongMethod_ShouldReturn405WithAllowHeaderNot500() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/delivery-fees").param("region", "VOLTA"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(header().string("Allow", org.hamcrest.Matchers.containsString("GET")))
+                .andExpect(jsonPath("$.status").value(405));
+    }
+
+    @Test
+    @WithMockUser(roles = "BUYER")
+    void unknownPath_ForSignedInUser_ShouldReturn404Not500() throws Exception {
+        mockMvc.perform(get("/api/v1/delivery-fees/extra/segments"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void unsupportedContentType_ShouldReturn415Not500() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/pickup-locations").contentType(MediaType.TEXT_PLAIN).content("x"))
+                .andExpect(status().isUnsupportedMediaType());
+    }
+
+    @Test
     void deliveryFee_InvalidOrMissingRegion_ShouldReturn400() throws Exception {
         mockMvc.perform(get("/api/v1/delivery-fees").param("region", "Kumasi")).andExpect(status().isBadRequest());
         mockMvc.perform(get("/api/v1/delivery-fees")).andExpect(status().isBadRequest());

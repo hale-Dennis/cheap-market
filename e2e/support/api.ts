@@ -80,6 +80,11 @@ export function seedPickupLocation(name: string, region: string) {
   });
 }
 
+/** Sets an order's status as an admin would (PATCH /admin/orders/{id}/status). */
+export function setOrderStatus(orderId: string, status: string) {
+  return stubRequest(`/api/v1/admin/orders/${orderId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+}
+
 /** Every listing the stub API has saved. */
 export async function listProducts() {
   const { content } = await stubRequest<{ content: Array<Record<string, unknown>> }>('/api/v1/admin/products');

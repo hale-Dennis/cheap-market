@@ -68,3 +68,15 @@ export interface AdminNotifications {
   /** Newest first. */
   notifications: AdminNotification[];
 }
+
+/** One row of the buyer's order history (see OrderSummaryResponseDto.java). */
+export interface OrderSummary {
+  id: string;
+  orderNumber: string;
+  createdAt: string;
+  finalTotalCents: number;
+  status: OrderStatus;
+  fulfillmentType: FulfillmentType;
+  /** Total quantity across the order's items. */
+  itemCount: number;
+}

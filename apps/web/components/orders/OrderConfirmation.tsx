@@ -1,19 +1,12 @@
 import Link from 'next/link';
 import type { Address, OrderDetail } from '@cheap-market/shared-types';
 
+import { StatusBadge } from '@/components/orders/StatusBadge';
 import { buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useOrder } from '@/hooks/useOrder';
 import { formatCedis } from '@/lib/format';
 import { ApiError } from '@/services/apiClient';
-
-const STATUS_LABELS: Record<OrderDetail['status'], string> = {
-  PENDING: 'Pending',
-  READY_FOR_PICKUP: 'Ready for pickup',
-  OUT_FOR_DELIVERY: 'Out for delivery',
-  COMPLETED: 'Completed',
-  DISPUTED: 'Disputed',
-};
 
 function formatAddress(address: Address) {
   return [address.street, address.town, address.gpsAddress].filter(Boolean).join(', ');
@@ -47,7 +40,13 @@ function Fulfillment({ order }: { order: OrderDetail }) {
   );
 }
 
-export function OrderConfirmation({ orderId }: { orderId: string | null }) {
+interface OrderConfirmationProps {
+  orderId: string | null;
+  /** "confirmation" right after checkout (thank-you message); "detail" when opened from My orders. */
+  variant?: 'confirmation' | 'detail';
+}
+
+export function OrderConfirmation({ orderId, variant = 'confirmation' }: OrderConfirmationProps) {
   const { data: order, error } = useOrder(orderId);
 
   if (!orderId || (error instanceof ApiError && (error.status === 404 || error.status === 400))) {
@@ -73,13 +72,24 @@ export function OrderConfirmation({ orderId }: { orderId: string | null }) {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div className="text-center">
-        <p aria-hidden="true" className="text-4xl">✓</p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Thank you! Your order is placed.</h1>
-        <p className="mt-2 text-muted-foreground">
-          Order number <span className="font-mono font-semibold text-foreground">{order.orderNumber}</span>
-        </p>
-      </div>
+      {variant === 'confirmation' ? (
+        <div className="text-center">
+          <p aria-hidden="true" className="text-4xl">✓</p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Thank you! Your order is placed.</h1>
+          <p className="mt-2 text-muted-foreground">
+            Order number <span className="font-mono font-semibold text-foreground">{order.orderNumber}</span>
+          </p>
+        </div>
+      ) : (
+        <div>
+          <Link href="/orders" className="text-sm text-muted-foreground hover:text-foreground">
+            ← My orders
+          </Link>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight">
+            Order <span className="font-mono">{order.orderNumber}</span>
+          </h1>
+        </div>
+      )}
 
       <Card className="space-y-6 p-6">
         <dl className="grid gap-4 text-sm sm:grid-cols-3">
@@ -89,7 +99,9 @@ export function OrderConfirmation({ orderId }: { orderId: string | null }) {
           </div>
           <div>
             <dt className="text-muted-foreground">Status</dt>
-            <dd className="font-medium">{STATUS_LABELS[order.status]}</dd>
+            <dd className="mt-1">
+              <StatusBadge status={order.status} />
+            </dd>
           </div>
           <div>
             <dt className="text-muted-foreground">Payment</dt>
@@ -140,7 +152,12 @@ export function OrderConfirmation({ orderId }: { orderId: string | null }) {
         </section>
       </Card>
 
-      <div className="flex justify-center">
+      <div className="flex flex-wrap justify-center gap-3">
+        {variant === 'confirmation' && (
+          <Link href="/orders" className={buttonVariants({ variant: 'outline' })}>
+            View my orders
+          </Link>
+        )}
         <Link href="/products" className={buttonVariants({ variant: 'outline' })}>
           Continue shopping
         </Link>

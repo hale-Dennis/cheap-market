@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+
+import { scanWcag } from './support/a11y';
 
 import { seedCategory, seedFarmer, seedListing } from './support/api';
 import { BUYER } from './support/config';
@@ -90,7 +91,6 @@ test.describe('Product detail', () => {
     await page.goto(`/products/${productId}`);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
-    const scan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
-    expect(scan.violations).toEqual([]);
+    expect(await scanWcag(page)).toEqual([]);
   });
 });
