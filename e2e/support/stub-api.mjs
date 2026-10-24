@@ -100,6 +100,9 @@ function productDetail(id) {
   };
 }
 
+const pickupLocations = [];
+const DELIVERY_FEE_CENTS = 1000;
+
 // Carts keyed by buyer email: productId -> quantity.
 const carts = new Map();
 
@@ -388,6 +391,24 @@ createServer(async (req, res) => {
     if (!session) return send(res, 401, { message: 'Authentication is required to access this resource.' });
     if (session.role !== 'BUYER') return send(res, 403, { message: 'You do not have permission to access this resource.' });
     return handleCart(req, res, session.email);
+  }
+  if (req.method === 'GET' && url.pathname === '/api/v1/delivery-fees') {
+    const region = url.searchParams.get('region');
+    if (!REGIONS.includes(region)) return send(res, 400, { message: 'Validation failed: region' });
+    return send(res, 200, { message: 'Delivery fee retrieved successfully.', data: { region, feeCents: DELIVERY_FEE_CENTS } });
+  }
+  if (url.pathname === '/api/v1/pickup-locations') {
+    const session = await sessionFromRequest(req);
+    if (!session) return send(res, 401, { message: 'Authentication is required to access this resource.' });
+    const region = url.searchParams.get('region');
+    const data = pickupLocations.filter((l) => l.region === region).sort((a, b) => a.name.localeCompare(b.name));
+    return send(res, 200, { message: 'Pickup locations retrieved successfully.', data });
+  }
+  if (req.method === 'POST' && url.pathname === '/api/v1/admin/pickup-locations') {
+    if ((await sessionFromRequest(req))?.role !== 'ADMIN') return send(res, 403, { message: 'Forbidden' });
+    const location = { id: randomUUID(), operatingHours: null, ...(await readJson(req)) };
+    pickupLocations.push(location);
+    return send(res, 201, { message: 'Pickup location created successfully.', data: location });
   }
   if (req.method === 'GET' && url.pathname === '/api/v1/categories') {
     const sorted = [...categories].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));

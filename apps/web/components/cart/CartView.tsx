@@ -176,12 +176,21 @@ export function CartView() {
           </div>
         </dl>
         {unavailable > 0 && (
-          <p className="text-sm text-destructive">
+          <p id="unavailable-note" className="text-sm text-destructive">
             {unavailable === 1 ? '1 item is' : `${unavailable} items are`} no longer available and not
-            included in the subtotal.
+            included in the subtotal. Remove {unavailable === 1 ? 'it' : 'them'} to check out.
           </p>
         )}
         <div className="flex flex-col gap-2">
+          {unavailable > 0 ? (
+            <Button disabled aria-describedby="unavailable-note">
+              Proceed to checkout
+            </Button>
+          ) : (
+            <Link href="/checkout" className={buttonVariants({ className: 'text-base' })}>
+              Proceed to checkout
+            </Link>
+          )}
           <Link href="/products" className={buttonVariants({ variant: 'outline' })}>
             Continue shopping
           </Link>

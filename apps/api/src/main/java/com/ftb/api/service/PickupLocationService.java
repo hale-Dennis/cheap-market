@@ -33,7 +33,7 @@ public class PickupLocationService {
     @Transactional(readOnly = true)
     @Cacheable("pickupLocations")
     public List<PickupLocationResponseDto> getLocationsByRegion(String region) {
-        return pickupLocationRepository.findByRegion(region)
+        return pickupLocationRepository.findByRegionOrderByNameAsc(region)
                 .stream()
                 .map(pickupLocationMapper::toPickupLocationResponseDto)
                 .collect(Collectors.toList());

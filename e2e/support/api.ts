@@ -67,6 +67,19 @@ export function seedCategory(name: string) {
   });
 }
 
+/** Creates a pickup location directly in the stub API and returns it. */
+export function seedPickupLocation(name: string, region: string) {
+  return stubRequest<{ id: string; name: string }>('/api/v1/admin/pickup-locations', {
+    method: 'POST',
+    body: JSON.stringify({
+      name,
+      region,
+      address: { street: `${name} Road`, town: 'Cape Coast', gpsAddress: null },
+      operatingHours: 'Mon–Sat 7am–6pm',
+    }),
+  });
+}
+
 /** Every listing the stub API has saved. */
 export async function listProducts() {
   const { content } = await stubRequest<{ content: Array<Record<string, unknown>> }>('/api/v1/admin/products');
