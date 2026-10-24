@@ -7,9 +7,19 @@ application:
       secret-key: ${JWT_SECRET}
       expiration: 3600000
       refresh-token-expiration: 604800000
+  storage:
+    # Set CLOUDINARY_URL (cloudinary://key:secret@cloud) to store images in Cloudinary.
+    # Without it, images are written to UPLOAD_DIR and served from /api/v1/media (local development only).
+    cloudinary-url: ${CLOUDINARY_URL:}
+    local-dir: ${UPLOAD_DIR:uploads}
 spring:
   application:
     name: api
+  servlet:
+    multipart:
+      # Each image may be at most 2 MB; a listing has at most 5.
+      max-file-size: 2MB
+      max-request-size: 11MB
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/cheap_market}
     username: ${DB_USER}

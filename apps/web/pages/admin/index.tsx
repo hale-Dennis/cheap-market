@@ -34,6 +34,7 @@ const SECTIONS: Section[] = [
   {
     title: 'Produce listings',
     description: 'List produce on behalf of farmers.',
+    actions: [{ href: '/admin/listings/create', label: 'Create new listing', primary: true }],
   },
   {
     title: 'Orders',

@@ -28,6 +28,11 @@ services:
       JWT_SECRET: ${JWT_SECRET:-bG9jYWwtZGV2LW9ubHktand0LXNlY3JldC1kby1ub3QtdXNlLWluLXByb2R1Y3Rpb24=}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin@default.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-defaultpassword}
+      # Leave CLOUDINARY_URL empty to keep uploaded images in the "uploads" volume instead.
+      CLOUDINARY_URL: ${CLOUDINARY_URL:-}
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads:/app/uploads
     ports:
       - "8080:8080"
     depends_on:
@@ -56,3 +61,4 @@ services:
 
 volumes:
   pgdata:
+  uploads:

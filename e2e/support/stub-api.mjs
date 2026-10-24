@@ -22,6 +22,57 @@ const USERS = {
 
 const farmers = [];
 const categories = [];
+const products = [];
+
+async function readRaw(req) {
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  return Buffer.concat(chunks);
+}
+
+/** Accepts 1–5 parts named "files" and returns fake media URLs (content is not stored). */
+async function uploadImages(req, res, url) {
+  const farmerId = url.searchParams.get('farmerId');
+  if (!farmers.some((f) => f.id === farmerId)) {
+    return send(res, 404, { message: `Farmer not found with id: ${farmerId}` });
+  }
+  const body = (await readRaw(req)).toString('latin1');
+  const count = (body.match(/name="files"; filename=/g) ?? []).length;
+  if (count === 0) return send(res, 400, { message: 'Select at least one image.' });
+  if (count > 5) return send(res, 400, { message: 'A listing can have at most 5 images.' });
+  const urls = Array.from({ length: count }, () => `/api/v1/media/${randomUUID()}.jpg`);
+  return send(res, 201, { message: 'Images uploaded successfully.', data: { urls } });
+}
+
+async function handleProducts(req, res) {
+  if (req.method === 'GET') {
+    return send(res, 200, { message: 'Admin products retrieved successfully.', data: { content: products } });
+  }
+  const body = await readJson(req);
+  if (!farmers.some((f) => f.id === body.farmerId)) {
+    return send(res, 404, { message: `Farmer not found with id: ${body.farmerId}` });
+  }
+  if (!categories.some((c) => c.id === body.categoryId)) {
+    return send(res, 404, { message: `Category not found with id: ${body.categoryId}` });
+  }
+  const images = body.imageUrls ?? [];
+  if (!body.name || !(body.priceCents > 0) || !body.unit || !body.harvestDate || images.length < 1 || images.length > 5) {
+    return send(res, 400, { message: 'Validation failed' });
+  }
+  if (images.some((u) => !String(u).startsWith('/api/v1/media/'))) {
+    return send(res, 400, { message: 'Images must be uploaded through the image upload endpoint.' });
+  }
+  const product = {
+    id: randomUUID(),
+    ...body,
+    description: body.description ?? null,
+    stockQuantity: 0,
+    listingStatus: 'ACTIVE',
+    createdAt: new Date().toISOString(),
+  };
+  products.push(product);
+  return send(res, 201, { message: 'Product listing created successfully.', data: product });
+}
 
 function normalizeCategoryName(raw) {
   return String(raw ?? '').trim().replace(/\s+/g, ' ');
@@ -221,6 +272,12 @@ createServer(async (req, res) => {
     if (session.role !== 'BUYER') return send(res, 403, { message: 'You do not have permission to access this resource.' });
     if (req.method === 'GET') return send(res, 200, { message: 'Profile retrieved successfully.', data: buyerProfile(session.email) });
     if (req.method === 'PUT') return updateBuyerProfile(req, res, session.email);
+  }
+  if (url.pathname === '/api/v1/admin/uploads/images' || url.pathname === '/api/v1/admin/products') {
+    const role = (await sessionFromRequest(req))?.role;
+    if (!role) return send(res, 401, { message: 'Authentication is required to access this resource.' });
+    if (role !== 'ADMIN') return send(res, 403, { message: 'You do not have permission to access this resource.' });
+    return url.pathname.endsWith('/images') ? uploadImages(req, res, url) : handleProducts(req, res);
   }
   const categoryMatch = /^\/api\/v1\/admin\/categories(?:\/([^/]+))?$/.exec(url.pathname);
   if (categoryMatch) {

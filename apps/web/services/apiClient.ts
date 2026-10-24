@@ -22,9 +22,11 @@ function redirectToLogin() {
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   let response: Response;
   try {
+    // FormData bodies (file uploads) must let the browser set the multipart boundary.
+    const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData;
     response = await fetch(`/api/v1${path}`, {
       ...init,
-      headers: { 'Content-Type': 'application/json', ...init.headers },
+      headers: isFormData ? init.headers : { 'Content-Type': 'application/json', ...init.headers },
     });
   } catch {
     throw new ApiError('Unable to reach the server. Please try again.', 0);

@@ -1,6 +1,7 @@
 package com.ftb.api.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.UUID;
 import java.util.List;
 import java.util.Optional;
@@ -9,6 +10,9 @@ import com.ftb.api.dto.request.PartialUpdateProductRequest;
 import com.ftb.api.dto.request.UpdateProductRequest;
 import com.ftb.api.exception.ConflictException;
 import com.ftb.api.model.User;
+import com.ftb.api.model.UserRole;
+import com.ftb.api.exception.BadRequestException;
+import com.ftb.api.service.storage.ImageStorage;
 import com.ftb.api.model.Product;
 import com.ftb.api.model.Category;
 import java.util.stream.Collectors;
@@ -40,25 +44,52 @@ public class ProductService {
     private final OrderItemRepository orderItemRepository;
     private final CategoryRepository categoryRepository;
     private final ProductMapper productMapper;
+    private final ImageStorage imageStorage;
 
     @Transactional
     public ProductResponse createProduct(CreateProductRequest request) {
 
         User farmer = userRepository.findById(request.getFarmerId())
+                .filter(user -> user.getRole() == UserRole.FARMER)
                 .orElseThrow(() -> new ResourceNotFoundException("Farmer not found with id: " + request.getFarmerId()));
 
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + request.getCategoryId()));
 
+        requireManagedImageUrls(request.getImageUrls());
+        requireRecentHarvest(request.getHarvestDate());
+
         Product product = productMapper.toProduct(request);
 
         product.setFarmer(farmer);
         product.setCategory(category);
+        product.setName(request.getName().trim());
+        product.setDescription(trimToNull(request.getDescription()));
+        product.setUnit(request.getUnit().trim());
         product.setListingStatus(ProductStatus.ACTIVE);
         product.setStockQuantity(0);
 
-        Product savedProduct = productRepository.save(product);
+        // Flush so the database-generated createdAt is populated in the response.
+        Product savedProduct = productRepository.saveAndFlush(product);
         return productMapper.toProductResponse(savedProduct);
+    }
+
+    /** Only images uploaded through {@code /admin/uploads/images} may be attached to a listing. */
+    private void requireManagedImageUrls(List<String> imageUrls) {
+        if (imageUrls.stream().anyMatch(url -> !imageStorage.isManagedUrl(url))) {
+            throw new BadRequestException("Images must be uploaded through the image upload endpoint.");
+        }
+    }
+
+    /** Catches typos such as 2002 for 2026: produce harvested over a year ago isn't sold as fresh. */
+    private static void requireRecentHarvest(LocalDate harvestDate) {
+        if (harvestDate.isBefore(LocalDate.now().minusYears(1))) {
+            throw new BadRequestException("Harvest date must be within the last year.");
+        }
+    }
+
+    private static String trimToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     @Transactional(readOnly = true)
@@ -127,11 +158,14 @@ public class ProductService {
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + request.getCategoryId()));
 
+        requireManagedImageUrls(request.getImageUrls());
+        requireRecentHarvest(request.getHarvestDate());
+
         product.setCategory(category);
-        product.setName(request.getName());
-        product.setDescription(request.getDescription());
+        product.setName(request.getName().trim());
+        product.setDescription(trimToNull(request.getDescription()));
         product.setPrice(BigDecimal.valueOf(request.getPriceCents()).movePointLeft(2));
-        product.setUnit(request.getUnit());
+        product.setUnit(request.getUnit().trim());
         product.setHarvestDate(request.getHarvestDate());
         product.setImageUrls(request.getImageUrls());
 

@@ -19,3 +19,7 @@ services:
     dockerContext: apps/api
     healthCheckPath: /actuator/health
     plan: free
+    envVars:
+      # Required in production: Render's disk is wiped on every deploy, so local image storage is unsafe.
+      - key: CLOUDINARY_URL
+        sync: false

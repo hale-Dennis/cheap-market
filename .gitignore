@@ -103,3 +103,6 @@ node_modules/
 # Playwright
 test-results/
 playwright-report/
+
+# Local image uploads (API without CLOUDINARY_URL)
+uploads/
