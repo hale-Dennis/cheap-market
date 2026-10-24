@@ -52,6 +52,27 @@ jobs:
     defaults:
       run:
         working-directory: ./apps/api
+    # ApiApplicationTests boots the full application context, which needs a real database.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: cheap_market
+          POSTGRES_USER: cheap_market
+          POSTGRES_PASSWORD: cheap_market
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cheap_market -d cheap_market"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DB_URL: jdbc:postgresql://localhost:5432/cheap_market
+      DB_USER: cheap_market
+      DB_PASSWORD: cheap_market
+      # Test-only key (base64); not used anywhere else.
+      JWT_SECRET: Y2ktb25seS1qd3Qtc2VjcmV0LWZvci1naXRodWItYWN0aW9ucy10ZXN0cw==
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 21
