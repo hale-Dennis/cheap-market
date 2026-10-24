@@ -18,7 +18,7 @@ test.describe('Admin authentication', () => {
     await page.goto('/admin');
 
     await expect(page).toHaveURL('/login?next=%2Fadmin');
-    await expect(page.getByRole('heading', { name: 'Admin sign in' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   });
 
   test('admin signs in, lands on the dashboard and holds an HttpOnly session cookie', async ({
@@ -59,14 +59,24 @@ test.describe('Admin authentication', () => {
     await expect(page).toHaveURL('/admin?tab=farmers');
   });
 
-  test('buyers cannot reach admin pages', async ({ page }) => {
+  test('buyers land on their profile and cannot reach admin pages', async ({ page }) => {
     await page.goto('/login');
     await signIn(page, BUYER);
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/buyer/profile');
 
     await page.goto('/admin');
 
-    await expect(page).toHaveURL('/login?next=%2Fadmin');
+    await expect(page).toHaveURL('/buyer/profile');
+  });
+
+  test('admins cannot reach buyer pages', async ({ page }) => {
+    await page.goto('/login');
+    await signIn(page, ADMIN);
+    await expect(page).toHaveURL('/admin');
+
+    await page.goto('/buyer/profile');
+
+    await expect(page).toHaveURL('/admin');
   });
 
   test('a token signed with the wrong key is rejected', async ({ page, context }) => {

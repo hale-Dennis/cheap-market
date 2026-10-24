@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { requireAdminSession, type AdminPageProps } from '@/lib/adminSession';
+import { requireAdminSession, type SessionPageProps } from '@/lib/pageSession';
 
 interface Section {
   title: string;
@@ -40,7 +40,7 @@ const SECTIONS: Section[] = [
   },
 ];
 
-export default function AdminDashboard({ adminEmail }: AdminPageProps) {
+export default function AdminDashboard({ email: adminEmail }: SessionPageProps) {
   return (
     <AdminLayout title="Dashboard" adminEmail={adminEmail}>
       <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>

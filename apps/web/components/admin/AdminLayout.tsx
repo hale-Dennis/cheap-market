@@ -1,11 +1,10 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
-import { Button } from '@/components/ui/button';
+import { SignOutButton } from '@/components/SignOutButton';
 import { cn } from '@/lib/utils';
-import { logout } from '@/services/authService';
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Dashboard' },
@@ -20,13 +19,6 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ title, adminEmail, children }: AdminLayoutProps) {
   const router = useRouter();
-  const [signingOut, setSigningOut] = useState(false);
-
-  async function handleLogout() {
-    setSigningOut(true);
-    await logout();
-    router.replace('/login');
-  }
 
   function isActive(href: string) {
     return href === '/admin'
@@ -66,14 +58,7 @@ export function AdminLayout({ title, adminEmail, children }: AdminLayoutProps) {
               <span className="hidden text-sm text-muted-foreground md:inline">
                 {adminEmail}
               </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-                disabled={signingOut}
-              >
-                {signingOut ? 'Signing out…' : 'Sign out'}
-              </Button>
+              <SignOutButton />
             </div>
           </div>
         </header>

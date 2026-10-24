@@ -6,6 +6,7 @@ import com.ftb.api.model.UserRole;
 import lombok.RequiredArgsConstructor;
 import com.ftb.api.model.AccountStatus;
 import com.ftb.api.repository.UserRepository;
+import com.ftb.api.service.AuthenticationService;
 import org.springframework.stereotype.Component;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,10 +31,11 @@ public class AdminUserInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (!userRepository.existsByEmail(adminUsername)) {
+        String adminEmail = AuthenticationService.normalizeEmail(adminUsername);
+        if (!userRepository.existsByEmail(adminEmail)) {
             User adminUser = User.builder()
                     .fullName("System Admin")
-                    .email(adminUsername)
+                    .email(adminEmail)
                     .passwordHash(passwordEncoder.encode(adminPassword))
                     .role(UserRole.ADMIN)
                     .accountStatus(AccountStatus.ACTIVE)

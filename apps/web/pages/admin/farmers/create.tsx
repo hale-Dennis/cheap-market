@@ -11,9 +11,9 @@ import {
   CardDescription,
   CardHeader,
 } from '@/components/ui/card';
-import { requireAdminSession, type AdminPageProps } from '@/lib/adminSession';
+import { requireAdminSession, type SessionPageProps } from '@/lib/pageSession';
 
-export default function CreateFarmerPage({ adminEmail }: AdminPageProps) {
+export default function CreateFarmerPage({ email: adminEmail }: SessionPageProps) {
   const router = useRouter();
 
   function handleCreated(farmer: Farmer) {

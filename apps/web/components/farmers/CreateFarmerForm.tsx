@@ -1,11 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import type { ReactNode } from 'react';
 import { REGIONS, type Farmer, type RegionCode } from '@cheap-market/shared-types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Field, FormError, describedBy } from '@/components/ui/form-field';
 import { Select } from '@/components/ui/select';
 import {
   createFarmerSchema,
@@ -13,38 +12,6 @@ import {
 } from '@/lib/validation/farmer';
 import { ApiError } from '@/services/apiClient';
 import { createFarmer } from '@/services/farmerService';
-
-interface FieldProps {
-  id: string;
-  label: string;
-  hint?: string;
-  error?: string;
-  children: ReactNode;
-}
-
-function Field({ id, label, hint, error, children }: FieldProps) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
-      {children}
-      {hint && !error && (
-        <p id={`${id}-hint`} className="text-sm text-muted-foreground">
-          {hint}
-        </p>
-      )}
-      {error && (
-        <p id={`${id}-error`} className="text-sm text-destructive">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function describedBy(id: string, error: unknown, hasHint = false) {
-  if (error) return `${id}-error`;
-  return hasHint ? `${id}-hint` : undefined;
-}
 
 interface CreateFarmerFormProps {
   onCreated: (farmer: Farmer) => void;
@@ -83,14 +50,7 @@ export function CreateFarmerForm({ onCreated }: CreateFarmerFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
-      {errors.root && (
-        <div
-          role="alert"
-          className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-        >
-          {errors.root.message}
-        </div>
-      )}
+      <FormError message={errors.root?.message} />
 
       <Field id="fullName" label="Full name" error={errors.fullName?.message}>
         <Input

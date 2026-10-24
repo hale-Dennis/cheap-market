@@ -91,7 +91,7 @@ class AuthControllerTest {
     @Test
     void register_ValidRequest_ShouldReturn201Created() throws Exception {
         // Given
-        RegisterRequest request = new RegisterRequest("New Buyer", "buyer@test.com", "Password123", "Test Region");
+        RegisterRequest request = new RegisterRequest("New Buyer", "buyer@test.com", "Password123", "ASHANTI");
         when(authenticationService.registerBuyer(any())).thenReturn(new LoginResponse("new.jwt.token", "new-refresh-token"));
 
         // When & Then
@@ -100,6 +100,53 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.accessToken").value("new.jwt.token"));
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource(delimiter = '|', value = {
+            "New Buyer | buyer@test.com   | password123 | ASHANTI     | Password must contain at least one uppercase letter",
+            "New Buyer | buyer@test.com   | PASSWORDABC | ASHANTI     | Password must contain at least one number",
+            "New Buyer | buyer@test.com   | Pass1       | ASHANTI     | Password must be at least 8 characters long",
+            "New Buyer | buyer@localhost  | Password123 | ASHANTI     | Please provide a valid email address",
+            "New Buyer | not-an-email     | Password123 | ASHANTI     | Please provide a valid email address",
+            "New Buyer | buyer@test.com   | Password123 | Test Region | Region must be one of Ghana's regions",
+            "''        | buyer@test.com   | Password123 | ASHANTI     | Full name cannot be blank"
+    })
+    void register_InvalidField_ShouldReturn400WithReason(String fullName, String email, String password,
+                                                         String region, String expectedMessage) throws Exception {
+        RegisterRequest request = new RegisterRequest(fullName, email, password, region);
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString(expectedMessage)));
+
+        verifyNoInteractions(authenticationService);
+    }
+
+    @Test
+    void register_PasswordLongerThan72Characters_ShouldReturn400() throws Exception {
+        RegisterRequest request = new RegisterRequest("New Buyer", "buyer@test.com", "A1" + "a".repeat(71), "ASHANTI");
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("at most 72 characters")));
+    }
+
+    @Test
+    void register_DuplicateEmail_ShouldReturn409() throws Exception {
+        RegisterRequest request = new RegisterRequest("New Buyer", "buyer@test.com", "Password123", "ASHANTI");
+        when(authenticationService.registerBuyer(any()))
+                .thenThrow(new com.ftb.api.exception.ConflictException("A user with this email already exists."));
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("A user with this email already exists."));
     }
 
     @Test

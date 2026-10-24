@@ -1,5 +1,6 @@
 package com.ftb.api.service;
 
+import java.util.Locale;
 import java.util.Collections;
 
 import com.ftb.api.dto.request.RefreshTokenRequest;
@@ -33,14 +34,15 @@ public class AuthenticationService {
 
 
     public LoginResponse login(LoginRequest request) {
+        String email = normalizeEmail(request.getEmail());
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
+                        email,
                         request.getPassword()
                 )
         );
 
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(email);
         final String accessToken = jwtService.generateToken(userDetails);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getUsername());
         return LoginResponse.builder()
@@ -50,6 +52,8 @@ public class AuthenticationService {
     }
 
     public LoginResponse registerBuyer(RegisterRequest request) {
+        request.setEmail(normalizeEmail(request.getEmail()));
+        request.setFullName(request.getFullName().trim());
 
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new ConflictException("A user with this email already exists.");
@@ -91,5 +95,8 @@ public class AuthenticationService {
                 .orElseThrow(() -> new TokenRefreshException(requestRefreshToken, "Refresh token is not in the database."));
     }
 
-
+    /** Emails are stored lower-cased, so "Jane@Example.com" and "jane@example.com" are the same account. */
+    public static String normalizeEmail(String email) {
+        return email == null ? null : email.trim().toLowerCase(Locale.ROOT);
+    }
 }

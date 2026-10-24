@@ -4,6 +4,8 @@ import com.ftb.api.dto.request.UpdateBuyerProfileRequest;
 import com.ftb.api.dto.response.BuyerProfileResponse;
 import com.ftb.api.mapper.UserMapper;
 import com.ftb.api.model.User;
+import com.ftb.api.model.Address;
+import com.ftb.api.dto.request.AddressRequest;
 import com.ftb.api.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -51,21 +53,47 @@ class UserServiceTest {
     }
 
     @Test
-    void updateBuyerProfile_UserExists_ShouldUpdateAndReturnProfile() {
-        // Given
+    void updateBuyerProfile_ShouldReplaceEditableFieldsAndNormaliseAddress() {
         String email = "buyer@test.com";
-        UpdateBuyerProfileRequest request = new UpdateBuyerProfileRequest();
-        User existingUser = new User();
+        UpdateBuyerProfileRequest request = new UpdateBuyerProfileRequest(
+                "  Jane Doe ", "GREATER_ACCRA", new AddressRequest(" 12 Ring Rd ", " Accra ", " ga-184-2278 "));
+        User existingUser = User.builder().email(email).fullName("Old Name").region("ASHANTI").build();
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(existingUser));
-        when(userRepository.save(any(User.class))).thenReturn(existingUser);
-        when(userMapper.toBuyerProfileResponse(any(User.class))).thenReturn(new BuyerProfileResponse());
+        when(userRepository.save(existingUser)).thenReturn(existingUser);
+        BuyerProfileResponse expected = new BuyerProfileResponse();
+        when(userMapper.toBuyerProfileResponse(existingUser)).thenReturn(expected);
 
-        // When
         BuyerProfileResponse response = userService.updateBuyerProfile(email, request);
 
-        // Then
-        assertNotNull(response);
-        verify(userMapper, times(1)).updateUserFromDto(request, existingUser);
-        verify(userRepository, times(1)).save(existingUser);
+        assertSame(expected, response);
+        assertEquals("Jane Doe", existingUser.getFullName());
+        assertEquals("GREATER_ACCRA", existingUser.getRegion());
+        assertEquals(new Address("12 Ring Rd", "Accra", "GA-184-2278"), existingUser.getDeliveryAddress());
+        assertEquals(email, existingUser.getEmail());
+    }
+
+    @Test
+    void updateBuyerProfile_BlankGpsAndNoAddress_ShouldStoreNulls() {
+        String email = "buyer@test.com";
+        User existingUser = User.builder().email(email)
+                .deliveryAddress(new Address("Old St", "Old Town", "AK-000-0000")).build();
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(existingUser));
+        when(userRepository.save(existingUser)).thenReturn(existingUser);
+
+        userService.updateBuyerProfile(email,
+                new UpdateBuyerProfileRequest("Jane", "VOLTA", new AddressRequest("1 Main St", "Ho", "  ")));
+        assertNull(existingUser.getDeliveryAddress().getGpsAddress());
+
+        userService.updateBuyerProfile(email, new UpdateBuyerProfileRequest("Jane", "VOLTA", null));
+        assertNull(existingUser.getDeliveryAddress());
+    }
+
+    @Test
+    void updateBuyerProfile_UserNotFound_ShouldThrowException() {
+        when(userRepository.findByEmail("ghost@test.com")).thenReturn(Optional.empty());
+
+        assertThrows(UsernameNotFoundException.class, () -> userService.updateBuyerProfile("ghost@test.com",
+                new UpdateBuyerProfileRequest("Jane", "VOLTA", null)));
+        verify(userRepository, never()).save(any());
     }
 }
