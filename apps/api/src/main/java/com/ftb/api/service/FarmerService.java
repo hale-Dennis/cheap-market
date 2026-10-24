@@ -3,6 +3,9 @@ package com.ftb.api.service;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.Locale;
+import com.ftb.api.util.PhoneNumbers;
+import com.ftb.api.exception.InvalidRequestException;
 
 import com.ftb.api.dto.request.UpdateFarmerRequest;
 import com.ftb.api.exception.ResourceNotFoundException;
@@ -39,20 +42,27 @@ public class FarmerService {
 
     @Transactional
     public FarmerResponse createFarmer(CreateFarmerRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
+        String phoneNumber = normalizePhoneNumber(request.getPhoneNumber());
+
+        if (userRepository.existsByEmail(email)) {
             throw new ConflictException("A user with this email already exists.");
         }
-        if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+        if (userRepository.existsByPhoneNumber(phoneNumber)) {
             throw new ConflictException("A user with this phone number already exists.");
         }
 
         User user = farmerMapper.toUser(request);
+        user.setFullName(request.getFullName().trim());
+        user.setEmail(email);
+        user.setPhoneNumber(phoneNumber);
         user.setRole(UserRole.FARMER);
         user.setAccountStatus(AccountStatus.ACTIVE);
         String temporaryPassword = UUID.randomUUID().toString();
         user.setPasswordHash(passwordEncoder.encode(temporaryPassword));
 
-        User savedUser = userRepository.save(user);
+        // Flush so the database-generated createdAt is populated in the response.
+        User savedUser = userRepository.saveAndFlush(user);
 
         return farmerMapper.toFarmerResponse(savedUser);
     }
@@ -86,12 +96,13 @@ public class FarmerService {
         User farmer = userRepository.findById(farmerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Farmer not found with id: " + farmerId));
 
-        if (!Objects.equals(farmer.getPhoneNumber(), request.getPhoneNumber()) && userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+        String phoneNumber = normalizePhoneNumber(request.getPhoneNumber());
+        if (!Objects.equals(farmer.getPhoneNumber(), phoneNumber) && userRepository.existsByPhoneNumber(phoneNumber)) {
             throw new ConflictException("This phone number is already in use by another account.");
         }
 
-        farmer.setFullName(request.getFullName());
-        farmer.setPhoneNumber(request.getPhoneNumber());
+        farmer.setFullName(request.getFullName().trim());
+        farmer.setPhoneNumber(phoneNumber);
         farmer.setRegion(request.getRegion());
         farmer.setAccountStatus(request.getAccountStatus());
 
@@ -113,5 +124,10 @@ public class FarmerService {
             throw new ConflictException("Cannot delete a farmer who has received ratings.");
         }
         userRepository.deleteById(farmerId);
+    }
+
+    private String normalizePhoneNumber(String phoneNumber) {
+        return PhoneNumbers.normalizeGhanaian(phoneNumber)
+                .orElseThrow(() -> new InvalidRequestException("Phone number must be a valid Ghanaian number."));
     }
 }
