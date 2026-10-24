@@ -10,6 +10,11 @@ test.describe.configure({ mode: 'serial' });
 const pagination = (page: Page) => page.getByRole('navigation', { name: 'Pagination' });
 const dataRows = (page: Page) => page.locator('tbody tr');
 
+async function totalFarmers(page: Page): Promise<number> {
+  const text = await pagination(page).getByText(/^Showing/).innerText();
+  return Number(/of (\d+) farmers/.exec(text)![1]);
+}
+
 async function totalPages(page: Page): Promise<number> {
   const text = await pagination(page).getByText(/^Page \d+ of \d+$/).innerText();
   return Number(/of (\d+)$/.exec(text)![1]);
@@ -43,6 +48,7 @@ test.describe('Farmer list', () => {
     await signInAsAdmin(page);
     await page.goto('/admin/farmers');
     const firstPageNames = await dataRows(page).locator('td:first-child').allInnerTexts();
+    const firstTotal = await totalFarmers(page);
 
     await pagination(page).getByRole('link', { name: 'Next' }).click();
 
@@ -51,7 +57,11 @@ test.describe('Farmer list', () => {
     await expect(pagination(page)).toContainText(/Showing 21–\d+ of \d+ farmers/);
     const secondPageNames = await dataRows(page).locator('td:first-child').allInnerTexts();
     expect(secondPageNames.length).toBeGreaterThan(0);
-    expect(secondPageNames.filter((name) => firstPageNames.includes(name))).toEqual([]);
+    // Pages can only be compared if no other spec added a farmer in between: a new (newest-first)
+    // farmer legitimately pushes the last row of page 1 onto page 2.
+    if ((await totalFarmers(page)) === firstTotal) {
+      expect(secondPageNames.filter((name) => firstPageNames.includes(name))).toEqual([]);
+    }
 
     await pagination(page).getByRole('link', { name: 'Previous' }).click();
 

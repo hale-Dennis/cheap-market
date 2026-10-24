@@ -48,3 +48,17 @@ export interface AdminProduct {
 export interface ImageUploadResponse {
   urls: string[];
 }
+
+/** A listing card in the public catalog (see ProductCardResponse.java). */
+export interface ProductCard {
+  id: string;
+  name: string;
+  priceCents: number;
+  unit: string;
+  /** First photo, or null if the listing has none. */
+  primaryImageUrl: string | null;
+  /** ISO date (YYYY-MM-DD). */
+  harvestDate: string;
+  farmerName: string;
+  categoryName: string;
+}
