@@ -8,3 +8,4 @@ export * from './farmer';
 export * from './order';
 export * from './product';
 export * from './regions';
+export * from './rating';

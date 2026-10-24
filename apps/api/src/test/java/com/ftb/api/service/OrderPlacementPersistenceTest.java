@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({OrderService.class, OrderMapperImpl.class, CartService.class, CartMapperImpl.class,
+@Import({OrderService.class, OrderMapperImpl.class, com.ftb.api.mapper.RatingMapperImpl.class, CartService.class, CartMapperImpl.class,
         DeliveryFeeService.class, AdminNotifier.class, OrderPlacementPersistenceTest.Config.class})
 class OrderPlacementPersistenceTest {
 

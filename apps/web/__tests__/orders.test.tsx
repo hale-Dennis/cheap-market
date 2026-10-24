@@ -48,6 +48,7 @@ const DELIVERY_ORDER: OrderDetail = {
   deliveryAddress: { street: '12 Ring Rd', town: 'Ho', gpsAddress: null },
   pickupLocation: null,
   createdAt: '2026-10-24T14:30:00Z',
+  farmers: [{ farmerId: 'f-1', fullName: 'Ama Mensah', rating: null }],
 };
 
 describe('OrderConfirmation', () => {

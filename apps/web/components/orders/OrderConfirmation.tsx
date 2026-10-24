@@ -1,8 +1,11 @@
 import Link from 'next/link';
-import type { Address, OrderDetail } from '@cheap-market/shared-types';
+import { useState } from 'react';
+import type { Address, OrderDetail, OrderFarmer } from '@cheap-market/shared-types';
 
 import { StatusBadge } from '@/components/orders/StatusBadge';
-import { buttonVariants } from '@/components/ui/button';
+import { RateFarmerModal } from '@/components/ratings/RateFarmerModal';
+import { Stars } from '@/components/ratings/Stars';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useOrder } from '@/hooks/useOrder';
 import { formatCedis } from '@/lib/format';
@@ -40,6 +43,46 @@ function Fulfillment({ order }: { order: OrderDetail }) {
   );
 }
 
+/** Each farmer in a completed order, with the buyer's rating or a button to give one. */
+function FarmerRatings({ order, onRated }: { order: OrderDetail; onRated: () => void }) {
+  const [rating, setRating] = useState<OrderFarmer | null>(null);
+
+  return (
+    <section aria-labelledby="farmers-heading" className="border-t pt-4">
+      <h2 id="farmers-heading" className="mb-1 text-lg font-semibold">
+        Rate your {order.farmers.length === 1 ? 'farmer' : 'farmers'}
+      </h2>
+      <p className="mb-3 text-sm text-muted-foreground">Your rating helps other buyers and the farmers themselves.</p>
+      <ul className="space-y-3">
+        {order.farmers.map((farmer) => (
+          <li key={farmer.farmerId} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+            <span className="font-medium">{farmer.fullName}</span>
+            {farmer.rating ? (
+              <span className="flex flex-col items-end">
+                <span className="flex items-center gap-2">
+                  <Stars rating={farmer.rating.score} className="text-base" />
+                  <span>You rated {farmer.rating.score} out of 5</span>
+                </span>
+                {farmer.rating.comment && (
+                  <span className="mt-1 max-w-xs text-right text-muted-foreground">“{farmer.rating.comment}”</span>
+                )}
+              </span>
+            ) : (
+              <Button variant="outline" size="sm" onClick={() => setRating(farmer)}>
+                <span aria-hidden="true" className="mr-1 text-amber-600">
+                  ★
+                </span>
+                Rate {farmer.fullName}
+              </Button>
+            )}
+          </li>
+        ))}
+      </ul>
+      <RateFarmerModal orderId={order.id} farmer={rating} onClose={() => setRating(null)} onRated={onRated} />
+    </section>
+  );
+}
+
 interface OrderConfirmationProps {
   orderId: string | null;
   /** "confirmation" right after checkout (thank-you message); "detail" when opened from My orders. */
@@ -47,7 +90,7 @@ interface OrderConfirmationProps {
 }
 
 export function OrderConfirmation({ orderId, variant = 'confirmation' }: OrderConfirmationProps) {
-  const { data: order, error } = useOrder(orderId);
+  const { data: order, error, mutate } = useOrder(orderId);
 
   if (!orderId || (error instanceof ApiError && (error.status === 404 || error.status === 400))) {
     return (
@@ -150,6 +193,10 @@ export function OrderConfirmation({ orderId, variant = 'confirmation' }: OrderCo
             </div>
           </dl>
         </section>
+
+        {order.status === 'COMPLETED' && order.farmers.length > 0 && (
+          <FarmerRatings order={order} onRated={() => mutate()} />
+        )}
       </Card>
 
       <div className="flex flex-wrap justify-center gap-3">

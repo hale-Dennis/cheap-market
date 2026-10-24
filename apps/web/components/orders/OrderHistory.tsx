@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { useEffect, useRef } from 'react';
-import type { OrderSummary } from '@cheap-market/shared-types';
+import { useEffect, useRef, useState } from 'react';
+import type { OrderFarmer, OrderSummary } from '@cheap-market/shared-types';
 
 import { StatusBadge } from '@/components/orders/StatusBadge';
+import { RateFarmerModal } from '@/components/ratings/RateFarmerModal';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useOrderHistory } from '@/hooks/useOrderHistory';
@@ -28,7 +29,7 @@ function Spinner({ label }: { label: string }) {
   );
 }
 
-function OrderRow({ order }: { order: OrderSummary }) {
+function OrderRow({ order, onRate }: { order: OrderSummary; onRate: (farmer: OrderFarmer) => void }) {
   return (
     <li>
       <Link
@@ -48,6 +49,19 @@ function OrderRow({ order }: { order: OrderSummary }) {
           <span className="whitespace-nowrap font-semibold">{formatCedis(order.finalTotalCents)}</span>
         </div>
       </Link>
+      {order.farmersToRate.length > 0 && (
+        // Outside the link: a button can't sit inside one.
+        <div className="flex flex-wrap gap-2 px-4 pb-4 sm:px-6">
+          {order.farmersToRate.map((farmer) => (
+            <Button key={farmer.farmerId} variant="outline" size="sm" onClick={() => onRate(farmer)}>
+              <span aria-hidden="true" className="mr-1 text-amber-600">
+                ★
+              </span>
+              Rate {farmer.fullName}
+            </Button>
+          ))}
+        </div>
+      )}
     </li>
   );
 }
@@ -78,8 +92,9 @@ function EmptyOrders() {
 
 /** The buyer's orders, newest first, loading more as they scroll. */
 export function OrderHistory() {
-  const { orders, total, error, isLoading, hasMore, loadingMore, loadMore } = useOrderHistory();
+  const { orders, total, error, isLoading, hasMore, loadingMore, loadMore, refresh } = useOrderHistory();
   const sentinel = useRef<HTMLDivElement>(null);
+  const [rating, setRating] = useState<{ orderId: string; farmer: OrderFarmer } | null>(null);
 
   // Load the next page when the end of the list comes within PREFETCH_MARGIN of the viewport.
   useEffect(() => {
@@ -119,7 +134,7 @@ export function OrderHistory() {
       <Card className="overflow-hidden">
         <ul className="divide-y" aria-label="Your orders">
           {orders.map((order) => (
-            <OrderRow key={order.id} order={order} />
+            <OrderRow key={order.id} order={order} onRate={(farmer) => setRating({ orderId: order.id, farmer })} />
           ))}
         </ul>
       </Card>
@@ -136,6 +151,12 @@ export function OrderHistory() {
       {!hasMore && orders.length > 10 && (
         <p className="text-center text-sm text-muted-foreground">That&apos;s all your orders.</p>
       )}
+      <RateFarmerModal
+        orderId={rating?.orderId ?? ''}
+        farmer={rating?.farmer ?? null}
+        onClose={() => setRating(null)}
+        onRated={() => refresh()}
+      />
     </div>
   );
 }

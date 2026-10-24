@@ -28,4 +28,6 @@ public class OrderConfirmationResponse {
     /** Set for pickup. */
     private PickupLocationResponseDto pickupLocation;
     private Instant createdAt;
+    /** Each farmer in the order, with the buyer's rating of them if given. */
+    private List<OrderFarmerDto> farmers;
 }

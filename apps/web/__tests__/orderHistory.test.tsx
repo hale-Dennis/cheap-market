@@ -27,6 +27,7 @@ function order(n: number, overrides: Partial<OrderSummary> = {}): OrderSummary {
     status: 'PENDING',
     fulfillmentType: 'PICKUP',
     itemCount: 3,
+    farmersToRate: [],
     ...overrides,
   };
 }
@@ -176,6 +177,7 @@ describe('Order detail', () => {
       deliveryAddress: { street: '12 Ring Rd', town: 'Ho', gpsAddress: null },
       pickupLocation: null,
       createdAt: '2026-10-24T14:30:00Z',
+      farmers: [],
     } satisfies OrderDetail);
     render(<OrderConfirmation orderId="order-1" variant="detail" />, { wrapper });
 

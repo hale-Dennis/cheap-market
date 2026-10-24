@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 
@@ -54,4 +55,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<User> findById(UUID id);
+
+    /** Locks the user's row, so concurrent rating updates for a farmer run one after another. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from User u where u.id = :id")
+    Optional<User> lockById(UUID id);
 }

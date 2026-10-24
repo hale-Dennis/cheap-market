@@ -19,6 +19,8 @@ import com.ftb.api.repository.UserRepository;
 import com.ftb.api.repository.CartRepository;
 import com.ftb.api.repository.OrderRepository;
 import com.ftb.api.repository.PickupLocationRepository;
+import com.ftb.api.repository.RatingRepository;
+import com.ftb.api.repository.OrderItemRepository;
 import static org.mockito.ArgumentMatchers.any;
 import static org.junit.jupiter.api.Assertions.*;
 import com.ftb.api.dto.request.PlaceOrderRequest;
@@ -46,6 +48,12 @@ class OrderServiceTest {
     private DeliveryFeeService deliveryFeeService;
     @Mock
     private AdminNotifier adminNotifier;
+    @Mock
+    private RatingRepository ratingRepository;
+    @Mock
+    private OrderItemRepository orderItemRepository;
+    @Spy
+    private com.ftb.api.mapper.RatingMapper ratingMapper = new com.ftb.api.mapper.RatingMapperImpl();
 
     @InjectMocks
     private OrderService orderService;

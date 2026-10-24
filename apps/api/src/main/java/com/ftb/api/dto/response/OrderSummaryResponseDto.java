@@ -2,6 +2,7 @@ package com.ftb.api.dto.response;
 
 import lombok.Data;
 import lombok.Builder;
+import java.util.List;
 import java.util.UUID;
 import java.time.Instant;
 import java.math.BigDecimal;
@@ -20,4 +21,7 @@ public class OrderSummaryResponseDto {
     private FulfillmentType fulfillmentType;
     /** Total quantity across the order's items. */
     private int itemCount;
+    /** Farmers the buyer can still rate (completed orders only); empty otherwise. */
+    @Builder.Default
+    private List<OrderFarmerDto> farmersToRate = List.of();
 }

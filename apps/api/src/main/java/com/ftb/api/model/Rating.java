@@ -16,7 +16,9 @@ import org.hibernate.annotations.CreationTimestamp;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "ratings")
+/** A buyer's rating of one farmer for one completed order; an order with several farmers gets one per farmer. */
+@Table(name = "ratings", uniqueConstraints = @UniqueConstraint(
+        name = "uk_ratings_order_farmer", columnNames = {"order_id", "farmer_id"}))
 public class Rating {
 
     @Id
@@ -31,14 +33,14 @@ public class Rating {
     @JoinColumn(name = "farmer_id", nullable = false)
     private User farmer;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
     @Column(nullable = false)
     private int score;
 
-    @Lob
+    @Column(length = 300)
     private String comment;
 
     @CreationTimestamp

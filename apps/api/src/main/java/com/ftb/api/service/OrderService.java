@@ -22,8 +22,12 @@ import java.util.Optional;
 import com.ftb.api.mapper.CartMapper;
 import com.ftb.api.util.OrderNumbers;
 import com.ftb.api.exception.BadRequestException;
+import java.util.Map;
 import java.util.UUID;
+import java.util.LinkedHashMap;
 import java.util.stream.Collectors;
+import com.ftb.api.mapper.RatingMapper;
+import com.ftb.api.dto.response.OrderFarmerDto;
 import com.ftb.api.dto.response.OrderSummaryResponseDto;
 import com.ftb.api.dto.response.PaginatedResponse;
 import org.springframework.data.domain.Page;
@@ -42,6 +46,9 @@ public class OrderService {
     private final OrderMapper orderMapper;
     private final DeliveryFeeService deliveryFeeService;
     private final AdminNotifier adminNotifier;
+    private final RatingRepository ratingRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final RatingMapper ratingMapper;
 
     /** Error codes returned when an order can't be placed. */
     public static final String EMPTY_CART = "EMPTY_CART";
@@ -180,7 +187,26 @@ public class OrderService {
                 .filter(o -> o.getBuyer().getEmail().equals(buyerEmail))
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
-        return orderMapper.toOrderConfirmationResponse(order);
+        return withFarmers(order);
+    }
+
+    /** The confirmation plus each farmer in the order and the buyer's rating of them, if given. */
+    private OrderConfirmationResponse withFarmers(Order order) {
+        Map<UUID, Rating> ratingsByFarmer = ratingRepository.findByOrderId(order.getId()).stream()
+                .collect(Collectors.toMap(rating -> rating.getFarmer().getId(), rating -> rating));
+        Map<UUID, User> farmers = new LinkedHashMap<>();
+        order.getItems().forEach(item -> farmers.putIfAbsent(item.getProduct().getFarmer().getId(), item.getProduct().getFarmer()));
+
+        OrderConfirmationResponse response = orderMapper.toOrderConfirmationResponse(order);
+        response.setFarmers(farmers.values().stream()
+                .map(farmer -> OrderFarmerDto.builder()
+                        .farmerId(farmer.getId())
+                        .fullName(farmer.getFullName())
+                        .rating(Optional.ofNullable(ratingsByFarmer.get(farmer.getId()))
+                                .map(ratingMapper::toRatingResponseDto).orElse(null))
+                        .build())
+                .toList());
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -196,6 +222,16 @@ public class OrderService {
         List<OrderSummaryResponseDto> orderSummaries = orderPage.getContent().stream()
                 .map(orderMapper::toOrderSummaryResponseDto)
                 .collect(Collectors.toList());
+
+        // One query for the whole page: which farmers in its completed orders are still waiting for a rating.
+        if (!orderSummaries.isEmpty()) {
+            Map<UUID, List<OrderFarmerDto>> toRate = orderItemRepository
+                    .findUnratedFarmers(orderSummaries.stream().map(OrderSummaryResponseDto::getId).toList()).stream()
+                    .collect(Collectors.groupingBy(OrderItemRepository.UnratedFarmer::getOrderId, Collectors.mapping(
+                            row -> OrderFarmerDto.builder().farmerId(row.getFarmerId()).fullName(row.getFullName()).build(),
+                            Collectors.toList())));
+            orderSummaries.forEach(summary -> summary.setFarmersToRate(toRate.getOrDefault(summary.getId(), List.of())));
+        }
 
         return PaginatedResponse.<OrderSummaryResponseDto>builder()
                 .content(orderSummaries)
@@ -238,9 +274,9 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public OrderConfirmationResponse getAdminOrderById(UUID orderId) {
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findWithDetailsById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
-        return orderMapper.toOrderConfirmationResponse(order);
+        return withFarmers(order);
     }
 }

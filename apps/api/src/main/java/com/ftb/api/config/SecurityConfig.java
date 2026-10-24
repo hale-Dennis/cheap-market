@@ -1,5 +1,6 @@
 package com.ftb.api.config;
 
+import org.springframework.http.HttpMethod;
 import java.util.Collections;
 import com.ftb.api.repository.UserRepository;
 import org.springframework.context.annotation.Bean;
@@ -43,6 +44,7 @@ public class SecurityConfig {
                     "/swagger-ui.html",
                     "/actuator/health",
                     "/api/v1/media/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/ratings").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
