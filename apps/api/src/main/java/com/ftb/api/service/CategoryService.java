@@ -9,35 +9,42 @@ import com.ftb.api.model.Category;
 import com.ftb.api.repository.CategoryRepository;
 import com.ftb.api.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 
 @Service
 @RequiredArgsConstructor
 public class CategoryService {
 
+    static final String DUPLICATE_NAME_MESSAGE = "A category with this name already exists.";
+
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
     private final CategoryMapper categoryMapper;
 
+    /** All categories, ordered by name (case-insensitive). */
+    @Transactional(readOnly = true)
     public List<CategoryResponse> getAllCategories() {
         return categoryRepository.findAll().stream()
+                .sorted(Comparator.comparing(Category::getName, String.CASE_INSENSITIVE_ORDER))
                 .map(categoryMapper::toCategoryResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
-        if (categoryRepository.existsByNameIgnoreCase(request.getName())) {
-            throw new ConflictException("A category with this name already exists.");
+        String name = normalizeName(request.getName());
+        if (categoryRepository.existsByNameIgnoreCase(name)) {
+            throw new ConflictException(DUPLICATE_NAME_MESSAGE);
         }
         Category category = categoryMapper.toCategory(request);
-        Category savedCategory = categoryRepository.save(category);
-        return categoryMapper.toCategoryResponse(savedCategory);
+        category.setName(name);
+        return categoryMapper.toCategoryResponse(saveUniquely(category));
     }
 
     @Transactional
@@ -45,13 +52,14 @@ public class CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + id));
 
-        if (categoryRepository.existsByNameIgnoreCase(request.getName()) && !category.getName().equalsIgnoreCase(request.getName())) {
-            throw new ConflictException("Another category with this name already exists.");
+        String name = normalizeName(request.getName());
+        // Changing only the letter case of the current name is allowed.
+        if (!category.getName().equalsIgnoreCase(name) && categoryRepository.existsByNameIgnoreCase(name)) {
+            throw new ConflictException(DUPLICATE_NAME_MESSAGE);
         }
 
-        category.setName(request.getName());
-        Category updatedCategory = categoryRepository.save(category);
-        return categoryMapper.toCategoryResponse(updatedCategory);
+        category.setName(name);
+        return categoryMapper.toCategoryResponse(saveUniquely(category));
     }
 
     @Transactional
@@ -60,8 +68,25 @@ public class CategoryService {
             throw new ResourceNotFoundException("Category not found with id: " + id);
         }
         if (productRepository.existsByCategoryId(id)) {
-            throw new ConflictException("Category is in use by products and cannot be deleted.");
+            throw new ConflictException("This category is used by produce listings and cannot be deleted.");
         }
         categoryRepository.deleteById(id);
+    }
+
+    /** Trims and collapses internal whitespace, so "  Leafy   Greens " is stored as "Leafy Greens". */
+    static String normalizeName(String name) {
+        return name.trim().replaceAll("\\s+", " ");
+    }
+
+    /**
+     * Flushes immediately so a duplicate inserted concurrently (which slips past the existence check)
+     * is reported as a 409 instead of a generic database error.
+     */
+    private Category saveUniquely(Category category) {
+        try {
+            return categoryRepository.saveAndFlush(category);
+        } catch (DataIntegrityViolationException ex) {
+            throw new ConflictException(DUPLICATE_NAME_MESSAGE);
+        }
     }
 }

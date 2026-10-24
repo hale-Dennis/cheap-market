@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 const NAV_ITEMS = [
   { href: '/admin', label: 'Dashboard' },
   { href: '/admin/farmers', label: 'Farmers' },
+  { href: '/admin/categories', label: 'Categories' },
 ];
 
 interface AdminLayoutProps {

@@ -7,7 +7,8 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
       <Component {...pageProps} />
-      <Toaster position="top-right" richColors closeButton />
+      {/* Default (not richColors) styling: richColors' green-on-green text fails WCAG AA contrast. */}
+      <Toaster position="bottom-right" closeButton />
     </>
   );
 }
