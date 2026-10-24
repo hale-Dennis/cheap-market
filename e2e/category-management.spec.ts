@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+
+import { scanWcag } from './support/a11y';
 
 import { signInAsAdmin } from './support/session';
 
@@ -13,13 +14,6 @@ async function addCategory(page: Page, name: string) {
   await dialog.getByLabel('Name').fill(name);
   await dialog.getByRole('button', { name: 'Add category' }).click();
   await expect(dialog).toBeHidden();
-}
-
-/** Waits for running CSS transitions/animations, so contrast is measured on final colours. */
-async function settleAnimations(page: Page) {
-  await page.waitForFunction(() =>
-    document.getAnimations().every((animation) => animation.playState !== 'running'),
-  );
 }
 
 const row = (page: Page, name: string) => page.getByRole('row', { name: new RegExp(`^${name}\\b`) });
@@ -104,18 +98,10 @@ test.describe('Category management', () => {
     await addCategory(page, uniqueName('Grains'));
     // Scan with the success toast showing, once its entrance transition has finished.
     await expect(page.getByText(/Category ".+" added\./)).toBeVisible();
-    await settleAnimations(page);
-
-    const pageScan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
-    expect(pageScan.violations).toEqual([]);
+    expect(await scanWcag(page)).toEqual([]);
 
     await page.getByRole('button', { name: 'Add category' }).first().click();
     await expect(page.getByRole('dialog')).toBeVisible();
-    await settleAnimations(page);
-    const dialogScan = await new AxeBuilder({ page })
-      .include('[role="dialog"]')
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
-      .analyze();
-    expect(dialogScan.violations).toEqual([]);
+    expect(await scanWcag(page, '[role="dialog"]')).toEqual([]);
   });
 });

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+
+import { scanWcag } from './support/a11y';
 
 import { listProducts, seedCategory, seedFarmer } from './support/api';
 import { signInAsAdmin } from './support/session';
@@ -94,7 +95,6 @@ test.describe('Create listing', () => {
     await page.getByRole('button', { name: 'Create listing' }).click();
     await expect(page.getByText('Add at least one photo.')).toBeVisible();
 
-    const scan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
-    expect(scan.violations).toEqual([]);
+    expect(await scanWcag(page)).toEqual([]);
   });
 });

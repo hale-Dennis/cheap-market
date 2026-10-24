@@ -10,12 +10,13 @@ import com.ftb.api.service.OrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.data.domain.Pageable;
 import com.ftb.api.dto.request.PlaceOrderRequest;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.constraints.Pattern;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.web.PageableDefault;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.access.prepost.PreAuthorize;
 
@@ -25,6 +26,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 @PreAuthorize("hasRole('BUYER')")
 @RequiredArgsConstructor
 public class OrderController {
+
+    static final int DEFAULT_PAGE_SIZE = 10;
+    static final int MAX_PAGE_SIZE = 50;
+    static final Sort NEWEST_FIRST = Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
 
     private final OrderService orderService;
 
@@ -62,12 +67,18 @@ public class OrderController {
         return ResponseHandler.successResponse("Order details retrieved successfully.", HttpStatus.OK, orderDetails);
     }
 
+    /** The buyer's orders, newest first, {@value #DEFAULT_PAGE_SIZE} per page by default. */
     @GetMapping
     public ResponseEntity<ApiResponse<PaginatedResponse<OrderSummaryResponseDto>>> listBuyerOrders(
             Authentication authentication,
-            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "must be 0 or greater") int page,
+            @RequestParam(defaultValue = "" + DEFAULT_PAGE_SIZE)
+            @Min(value = 1, message = "must be at least 1")
+            @Max(value = MAX_PAGE_SIZE, message = "must be at most " + MAX_PAGE_SIZE) int size
     ) {
-        PaginatedResponse<OrderSummaryResponseDto> orders = orderService.getOrdersForBuyer(authentication.getName(), pageable);
+        PaginatedResponse<OrderSummaryResponseDto> orders = orderService.getOrdersForBuyer(
+                authentication.getName(), PageRequest.of(page, size, NEWEST_FIRST));
         return ResponseHandler.successResponse("Order history retrieved successfully.", HttpStatus.OK, orders);
     }
 }

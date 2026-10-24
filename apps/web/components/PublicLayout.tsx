@@ -42,6 +42,11 @@ export function PublicLayout({ title, session, children }: PublicLayoutProps) {
               {session ? (
                 <>
                   {session.role === 'BUYER' && <CartLink />}
+                  {session.role === 'BUYER' && (
+                    <Link href="/orders" className="whitespace-nowrap text-sm text-muted-foreground hover:text-foreground">
+                      My orders
+                    </Link>
+                  )}
                   <Link
                     href={homeForRole(session.role)}
                     className="text-sm text-muted-foreground hover:text-foreground"

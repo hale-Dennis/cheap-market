@@ -449,6 +449,28 @@ createServer(async (req, res) => {
     if (session.role !== 'BUYER') return send(res, 403, { message: 'You do not have permission to access this resource.' });
     return placeOrder(req, res, session.email);
   }
+  if (url.pathname === '/api/v1/orders' && req.method === 'GET') {
+    const session = await sessionFromRequest(req);
+    if (!session) return send(res, 401, { message: 'Authentication is required to access this resource.' });
+    const page = Number(url.searchParams.get('page') ?? 0);
+    const size = Number(url.searchParams.get('size') ?? 10);
+    const mine = orders.filter((o) => o.buyerEmail === session.email).slice().reverse();
+    const content = mine.slice(page * size, (page + 1) * size).map((o) => ({
+      id: o.id, orderNumber: o.orderNumber, createdAt: o.createdAt, finalTotalCents: o.finalTotalCents,
+      status: o.status, fulfillmentType: o.fulfillmentType, itemCount: o.items.reduce((s, i) => s + i.quantity, 0),
+    }));
+    return send(res, 200, { message: 'Order history retrieved successfully.', data: {
+      content, currentPage: page, totalPages: Math.ceil(mine.length / size), totalElements: mine.length, size } });
+  }
+  // Mirrors the real API: PATCH /admin/orders/{id}/status.
+  const adminOrderMatch = /^\/api\/v1\/admin\/orders\/([^/]+)\/status$/.exec(url.pathname);
+  if (adminOrderMatch && req.method === 'PATCH') {
+    if ((await sessionFromRequest(req))?.role !== 'ADMIN') return send(res, 403, { message: 'Forbidden' });
+    const order = orders.find((o) => o.id === adminOrderMatch[1]);
+    if (!order) return send(res, 404, { message: 'Order not found' });
+    order.status = (await readJson(req)).status;
+    return send(res, 200, { message: 'Order updated successfully.', data: { id: order.id, status: order.status } });
+  }
   const orderMatch = /^\/api\/v1\/orders\/([^/]+)$/.exec(url.pathname);
   if (orderMatch && req.method === 'GET') {
     const session = await sessionFromRequest(req);

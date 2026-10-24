@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Formula;
 
 
 @Data
@@ -71,6 +72,10 @@ public class Order {
 
     @Column(nullable = false)
     private BigDecimal finalTotal;
+
+    /** Total quantity across the order's items, computed by the database (no need to load the items). */
+    @Formula("(select coalesce(sum(oi.quantity), 0) from order_items oi where oi.order_id = id)")
+    private Integer itemCount;
 
     @CreationTimestamp
     private Instant createdAt;

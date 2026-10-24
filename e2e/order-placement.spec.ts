@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+
+import { scanWcag } from './support/a11y';
 
 import { seedCategory, seedFarmer, seedListing, seedPickupLocation } from './support/api';
 import { signInAsAdmin } from './support/session';
@@ -124,7 +125,6 @@ test.describe('Placing an order', () => {
     await page.getByRole('button', { name: 'Place order' }).click();
     await expect(page.getByRole('heading', { name: 'Thank you! Your order is placed.' })).toBeVisible();
 
-    const scan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
-    expect(scan.violations).toEqual([]);
+    expect(await scanWcag(page)).toEqual([]);
   });
 });

@@ -155,6 +155,43 @@ class OrderControllerTest {
     }
 
     @Test
+    void listOrders_ShouldRequestTenPerPageNewestFirst() throws Exception {
+        when(orderService.getOrdersForBuyer(eq(EMAIL), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(com.ftb.api.dto.response.PaginatedResponse.<com.ftb.api.dto.response.OrderSummaryResponseDto>builder()
+                        .content(List.of(com.ftb.api.dto.response.OrderSummaryResponseDto.builder()
+                                .id(ORDER).orderNumber("CM-ABCDEFGH").status(OrderStatus.PENDING)
+                                .fulfillmentType(FulfillmentType.PICKUP).itemCount(3).finalTotalCents(4500)
+                                .createdAt(Instant.now()).build()))
+                        .currentPage(0).totalPages(1).totalElements(1).size(10).build());
+
+        mockMvc.perform(get("/api/v1/orders"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].orderNumber").value("CM-ABCDEFGH"))
+                .andExpect(jsonPath("$.data.content[0].itemCount").value(3))
+                .andExpect(jsonPath("$.data.content[0].status").value("PENDING"));
+
+        org.mockito.ArgumentCaptor<org.springframework.data.domain.Pageable> pageable =
+                org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        verify(orderService).getOrdersForBuyer(eq(EMAIL), pageable.capture());
+        org.junit.jupiter.api.Assertions.assertEquals(10, pageable.getValue().getPageSize());
+        org.junit.jupiter.api.Assertions.assertEquals(OrderController.NEWEST_FIRST, pageable.getValue().getSort());
+    }
+
+    @Test
+    void listOrders_InvalidPaging_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/v1/orders").param("page", "-1")).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/v1/orders").param("size", "51")).andExpect(status().isBadRequest());
+
+        verifyNoInteractions(orderService);
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void listOrders_AsAdmin_ShouldReturn403() throws Exception {
+        mockMvc.perform(get("/api/v1/orders")).andExpect(status().isForbidden());
+    }
+
+    @Test
     void getOrder_ShouldReturnConfirmationDetails() throws Exception {
         when(orderService.getOrderConfirmation(ORDER, EMAIL)).thenReturn(OrderConfirmationResponse.builder()
                 .id(ORDER).orderNumber("CM-ABCDEFGH").status(OrderStatus.PENDING).paymentStatus(PaymentStatus.UNPAID)
