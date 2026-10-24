@@ -14,6 +14,10 @@ public class CreateRatingRequest {
     @NotNull(message = "Order ID cannot be null")
     private UUID orderId;
 
+    /** Which of the order's farmers is being rated. */
+    @NotNull(message = "Farmer ID cannot be null")
+    private UUID farmerId;
+
     @NotNull(message = "Score cannot be null")
     @Min(value = 1, message = "Score must be at least 1")
     @Max(value = 5, message = "Score must not exceed 5")

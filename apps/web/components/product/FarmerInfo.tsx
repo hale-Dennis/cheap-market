@@ -1,20 +1,6 @@
 import { regionName, type FarmerSummary } from '@cheap-market/shared-types';
 
-/** Five stars, filled to the nearest half; decorative (the text alongside carries the meaning). */
-function Stars({ rating }: { rating: number }) {
-  const rounded = Math.round(rating * 2) / 2;
-  return (
-    <span aria-hidden="true" className="relative inline-block text-lg leading-none tracking-tight">
-      <span className="text-border">★★★★★</span>
-      <span
-        className="absolute inset-y-0 left-0 overflow-hidden whitespace-nowrap text-amber-600"
-        style={{ width: `${(rounded / 5) * 100}%` }}
-      >
-        ★★★★★
-      </span>
-    </span>
-  );
-}
+import { Stars } from '@/components/ratings/Stars';
 
 export function FarmerInfo({ farmer }: { farmer: FarmerSummary }) {
   const count = farmer.ratingCount ?? 0;

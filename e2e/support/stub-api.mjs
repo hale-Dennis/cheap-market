@@ -96,7 +96,7 @@ function productDetail(id) {
     harvestDate: product.harvestDate,
     imageUrls: product.imageUrls,
     categoryName: categories.find((c) => c.id === product.categoryId)?.name,
-    farmer: { fullName: farmer.fullName, region: farmer.region, averageRating: null, ratingCount: 0 },
+    farmer: { fullName: farmer.fullName, region: farmer.region, averageRating: farmer.averageRating ?? null, ratingCount: farmer.ratingCount ?? 0 },
   };
 }
 
@@ -105,6 +105,44 @@ const DELIVERY_FEE_CENTS = 1000;
 
 const orders = [];
 const notifications = [];
+const ratings = [];
+
+/** The distinct farmers who supplied an order, with this order's rating of each (mirrors OrderFarmerDto). */
+function orderFarmers(order) {
+  const ids = [...new Set(order.items.map((i) => products.find((p) => p.id === i.productId)?.farmerId).filter(Boolean))];
+  return ids.map((farmerId) => {
+    const rating = ratings.find((r) => r.orderId === order.id && r.farmerId === farmerId) ?? null;
+    return { farmerId, fullName: farmers.find((f) => f.id === farmerId)?.fullName, rating };
+  });
+}
+
+/** Mirrors RatingService.createRating. */
+async function createRating(req, res, email) {
+  const body = await readJson(req);
+  const comment = typeof body.comment === 'string' && body.comment.trim() ? body.comment.trim() : null;
+  if (!Number.isInteger(body.score) || body.score < 1 || body.score > 5 || !body.farmerId || !body.orderId
+      || (comment && comment.length > 300)) {
+    return send(res, 400, { message: 'Validation failed: score must be 1-5; comment: Comment cannot exceed 300 characters' });
+  }
+  const order = orders.find((o) => o.id === body.orderId && o.buyerEmail === email);
+  if (!order) return send(res, 404, { message: `Order not found with id: ${body.orderId}` });
+  if (order.status !== 'COMPLETED') {
+    return send(res, 422, { code: 'ORDER_NOT_COMPLETED', message: 'You can rate farmers once the order is completed.' });
+  }
+  if (!orderFarmers(order).some((f) => f.farmerId === body.farmerId)) {
+    return send(res, 422, { code: 'FARMER_NOT_IN_ORDER', message: "That farmer didn't supply this order." });
+  }
+  if (ratings.some((r) => r.orderId === order.id && r.farmerId === body.farmerId)) {
+    return send(res, 409, { code: 'ALREADY_RATED', message: "You've already rated this farmer for this order." });
+  }
+  const rating = { id: randomUUID(), score: body.score, comment, orderId: order.id, farmerId: body.farmerId, createdAt: new Date().toISOString() };
+  ratings.push(rating);
+  const farmer = farmers.find((f) => f.id === body.farmerId);
+  const scores = ratings.filter((r) => r.farmerId === farmer.id).map((r) => r.score);
+  farmer.ratingCount = scores.length;
+  farmer.averageRating = Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100) / 100;
+  return send(res, 201, { message: 'Rating submitted successfully.', data: rating });
+}
 
 function orderNumber() {
   const alphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
@@ -458,6 +496,7 @@ createServer(async (req, res) => {
     const content = mine.slice(page * size, (page + 1) * size).map((o) => ({
       id: o.id, orderNumber: o.orderNumber, createdAt: o.createdAt, finalTotalCents: o.finalTotalCents,
       status: o.status, fulfillmentType: o.fulfillmentType, itemCount: o.items.reduce((s, i) => s + i.quantity, 0),
+      farmersToRate: o.status === 'COMPLETED' ? orderFarmers(o).filter((f) => !f.rating) : [],
     }));
     return send(res, 200, { message: 'Order history retrieved successfully.', data: {
       content, currentPage: page, totalPages: Math.ceil(mine.length / size), totalElements: mine.length, size } });
@@ -478,7 +517,19 @@ createServer(async (req, res) => {
     const order = orders.find((o) => o.id === orderMatch[1] && o.buyerEmail === session.email);
     if (!order) return send(res, 404, { message: 'Order not found' });
     const { buyerEmail, idempotencyKey, ...detail } = order;
-    return send(res, 200, { message: 'Order details retrieved successfully.', data: detail });
+    return send(res, 200, { message: 'Order details retrieved successfully.', data: { ...detail, farmers: orderFarmers(order) } });
+  }
+  if (url.pathname === '/api/v1/ratings' && req.method === 'POST') {
+    const session = await sessionFromRequest(req);
+    if (!session) return send(res, 401, { message: 'Authentication is required to access this resource.' });
+    if (session.role !== 'BUYER') return send(res, 403, { message: 'You do not have permission to access this resource.' });
+    return createRating(req, res, session.email);
+  }
+  if (url.pathname === '/api/v1/ratings' && req.method === 'GET') {
+    const farmer = farmers.find((f) => f.id === url.searchParams.get('farmerId'));
+    if (!farmer) return send(res, 404, { message: 'Farmer not found' });
+    return send(res, 200, { message: 'Farmer rating retrieved successfully.', data: {
+      farmerId: farmer.id, averageRating: farmer.averageRating ?? null, ratingCount: farmer.ratingCount ?? 0 } });
   }
   if (url.pathname.startsWith('/api/v1/admin/notifications')) {
     if ((await sessionFromRequest(req))?.role !== 'ADMIN') return send(res, 403, { message: 'Forbidden' });

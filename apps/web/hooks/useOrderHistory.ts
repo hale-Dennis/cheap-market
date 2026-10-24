@@ -31,5 +31,7 @@ export function useOrderHistory() {
     hasMore,
     loadingMore,
     loadMore: () => result.setSize(result.size + 1),
+    /** Re-fetches every loaded page, e.g. after a rating changes what a row shows. */
+    refresh: () => result.mutate(),
   };
 }

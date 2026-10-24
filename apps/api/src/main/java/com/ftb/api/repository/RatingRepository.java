@@ -1,21 +1,26 @@
 package com.ftb.api.repository;
 
-import com.ftb.api.model.Rating;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
+import java.util.List;
 import java.util.UUID;
+import com.ftb.api.model.Rating;
+import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.JpaRepository;
+
 
 @Repository
 public interface RatingRepository extends JpaRepository<Rating, UUID> {
 
-    /**
-     * Checks if a rating exists for a given order ID and buyer ID.
-     * @param orderId The UUID of the order.
-     * @param buyerId The UUID of the buyer.
-     * @return true if a rating exists, false otherwise.
-     */
-    boolean existsByOrderIdAndBuyerId(UUID orderId, UUID buyerId);
+    /** Whether the buyer has already rated this farmer for this order. */
+    boolean existsByOrderIdAndFarmerId(UUID orderId, UUID farmerId);
 
     boolean existsByFarmerId(UUID farmerId);
+
+    List<Rating> findByOrderId(UUID orderId);
+
+    long countByFarmerId(UUID farmerId);
+
+    /** The farmer's mean score, or null if they have no ratings. */
+    @Query("select avg(r.score) from Rating r where r.farmer.id = :farmerId")
+    Double averageScoreByFarmerId(UUID farmerId);
 }

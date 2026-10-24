@@ -1,5 +1,6 @@
 import type { Address } from './buyer';
 import type { FulfillmentType, PickupLocation } from './checkout';
+import type { Rating } from './rating';
 
 export type OrderStatus = 'PENDING' | 'READY_FOR_PICKUP' | 'OUT_FOR_DELIVERY' | 'COMPLETED' | 'DISPUTED';
 export type PaymentStatus = 'UNPAID' | 'PAID';
@@ -43,6 +44,16 @@ export interface OrderDetail {
   deliveryAddress: Address | null;
   pickupLocation: PickupLocation | null;
   createdAt: string;
+  /** Each farmer who supplied the order, with the buyer's rating of them if given. */
+  farmers: OrderFarmer[];
+}
+
+/** A farmer in an order (see OrderFarmerDto.java). */
+export interface OrderFarmer {
+  farmerId: string;
+  fullName: string;
+  /** Null until the buyer rates this farmer for the order (always null in farmersToRate). */
+  rating: Rating | null;
 }
 
 /** Error codes from POST /orders that the checkout handles. */
@@ -79,4 +90,6 @@ export interface OrderSummary {
   fulfillmentType: FulfillmentType;
   /** Total quantity across the order's items. */
   itemCount: number;
+  /** Farmers the buyer can still rate; empty unless the order is completed. */
+  farmersToRate: OrderFarmer[];
 }
