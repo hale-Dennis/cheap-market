@@ -11,7 +11,7 @@ The platform is a modern, decoupled web application built with the following tec
 
 | Category | Technology | Purpose |
 | :--- | :--- | :--- |
-| **Backend** | Java 17, Spring Boot | REST API and business logic |
+| **Backend** | Java 21, Spring Boot | REST API and business logic |
 | **Frontend** | TypeScript, Next.js (React) | Responsive user interface |
 | **Database**| PostgreSQL | Primary data storage |
 | **UI Library**| shadcn/ui | UI components |
@@ -24,7 +24,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-* Java JDK 17 or later
+* Java JDK 21
 * Maven 3.8+
 * Node.js 18+ and npm/yarn
 * PostgreSQL 16
@@ -48,11 +48,17 @@ These instructions will get you a copy of the project up and running on your loc
 
 3.  **Frontend Setup (`/apps/web`):**
 
-    * Navigate to the `web` directory.
-    * Install dependencies: `npm install`
-    * Create a `.env.local` file and add the API base URL: `NEXT_PUBLIC_API_URL=http://localhost:8080`
-    * Run the development server: `npm run dev`
-    * The frontend will be available at `http://localhost:3000`.
+    * Install dependencies from the repository root: `npm install`
+    * Copy `apps/web/.env.example` to `apps/web/.env.local` and fill it in:
+        * `API_BASE_URL` – backend URL (server-side only, e.g. `http://localhost:8080`).
+        * `JWT_SECRET` – **the same** base64 secret the backend uses; the web app verifies session tokens with it.
+    * Run the development server: `npm run dev --workspace web`
+    * The frontend will be available at `http://localhost:3000`. Admins sign in at `/login` with the `ADMIN_USERNAME` / `ADMIN_PASSWORD` configured on the backend.
+
+4.  **Tests:**
+
+    * Frontend unit/component tests: `npm test --workspace web`
+    * End-to-end tests (Playwright): `npx playwright install chromium` once, then `npm run test:e2e`. These run against a stub of the login API (`e2e/support/stub-api.mjs`), so no backend or database is needed.
 
 ## API Documentation
 

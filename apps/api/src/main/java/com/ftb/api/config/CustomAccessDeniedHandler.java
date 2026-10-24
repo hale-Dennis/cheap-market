@@ -4,6 +4,7 @@ import java.io.IOException;
 import org.springframework.http.HttpStatus;
 import com.ftb.api.dto.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import jakarta.servlet.http.HttpServletResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,7 +13,10 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 
 
 @Component
+@RequiredArgsConstructor
 public class CustomAccessDeniedHandler implements AccessDeniedHandler {
+
+    private final ObjectMapper objectMapper;
 
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException)
@@ -25,6 +29,6 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 
         response.setStatus(HttpStatus.FORBIDDEN.value());
         response.setContentType("application/json");
-        new ObjectMapper().writeValue(response.getOutputStream(), apiResponse);
+        objectMapper.writeValue(response.getOutputStream(), apiResponse);
     }
 }

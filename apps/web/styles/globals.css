@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 150 10% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 150 10% 10%;
+    /* Fresh-produce green; meets WCAG AA contrast against white text. */
+    --primary: 142 72% 26%;
+    --primary-foreground: 0 0% 100%;
+    --muted: 120 10% 96%;
+    --muted-foreground: 150 6% 38%;
+    --destructive: 0 72% 42%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 120 8% 88%;
+    --input: 120 8% 82%;
+    --ring: 142 72% 26%;
+    --radius: 0.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
