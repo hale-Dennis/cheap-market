@@ -13,6 +13,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -50,6 +52,28 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Object>> handleResourceNotFoundException(ResourceNotFoundException ex) {
         return ResponseHandler.errorResponse(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    /**
+     * Handles constraint violations on controller method parameters (e.g. {@code @Min} on a query param).
+     */
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleHandlerMethodValidationException(HandlerMethodValidationException ex) {
+        String errors = ex.getParameterValidationResults().stream()
+                .flatMap(result -> result.getResolvableErrors().stream()
+                        .map(error -> result.getMethodParameter().getParameterName() + ": " + error.getDefaultMessage()))
+                .collect(Collectors.joining(", "));
+
+        return ResponseHandler.errorResponse("Validation failed: " + errors, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Handles request parameters that cannot be converted to the expected type (e.g. {@code ?page=abc}).
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Object>> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String message = "Invalid value '" + ex.getValue() + "' for parameter '" + ex.getName() + "'.";
+        return ResponseHandler.errorResponse(message, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(InvalidRequestException.class)

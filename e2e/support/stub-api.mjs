@@ -90,6 +90,9 @@ async function createFarmer(req, res) {
 function listFarmers(url, res) {
   const page = Number(url.searchParams.get('page') ?? 0);
   const size = Number(url.searchParams.get('size') ?? 20);
+  if (!Number.isInteger(page) || page < 0 || !Number.isInteger(size) || size < 1 || size > 100) {
+    return send(res, 400, { message: 'Validation failed: invalid page or size' });
+  }
   const content = farmers.slice(page * size, (page + 1) * size);
   return send(res, 200, {
     message: 'Successfully retrieved farmer list.',

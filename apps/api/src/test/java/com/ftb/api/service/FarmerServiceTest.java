@@ -138,6 +138,41 @@ class FarmerServiceTest {
     }
 
     @Test
+    void getAllFarmers_MiddlePage_ShouldReturnThatSliceWithPagingMetadata() {
+        Pageable pageable = PageRequest.of(1, 20);
+        List<User> secondPage = java.util.stream.IntStream.range(20, 40)
+                .mapToObj(i -> User.builder().fullName("Farmer " + i).build())
+                .toList();
+        when(userRepository.findByRole(UserRole.FARMER, pageable))
+                .thenReturn(new PageImpl<>(secondPage, pageable, 45));
+        when(farmerMapper.toFarmerResponse(any(User.class)))
+                .thenAnswer(invocation -> FarmerResponse.builder()
+                        .fullName(invocation.<User>getArgument(0).getFullName()).build());
+
+        PaginatedResponse<FarmerResponse> response = farmerService.getAllFarmers(pageable);
+
+        assertEquals(20, response.getContent().size());
+        assertEquals("Farmer 20", response.getContent().get(0).getFullName());
+        assertEquals("Farmer 39", response.getContent().get(19).getFullName());
+        assertEquals(1, response.getCurrentPage());
+        assertEquals(3, response.getTotalPages());
+        assertEquals(45, response.getTotalElements());
+        assertEquals(20, response.getSize());
+    }
+
+    @Test
+    void getAllFarmers_NoFarmers_ShouldReturnEmptyPage() {
+        Pageable pageable = PageRequest.of(0, 20);
+        when(userRepository.findByRole(UserRole.FARMER, pageable)).thenReturn(Page.empty(pageable));
+
+        PaginatedResponse<FarmerResponse> response = farmerService.getAllFarmers(pageable);
+
+        assertTrue(response.getContent().isEmpty());
+        assertEquals(0, response.getTotalElements());
+        assertEquals(0, response.getTotalPages());
+    }
+
+    @Test
     void updateFarmer_ShouldNormalisePhoneNumberBeforeCheckingDuplicates() {
         UUID id = UUID.randomUUID();
         User farmer = User.builder().id(id).phoneNumber("+233241234567").build();
