@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { REGIONS, type RegionCode } from '@cheap-market/shared-types';
@@ -11,13 +12,17 @@ import { AuthError, register, type LoginResult } from '@/services/authService';
 
 interface SignUpFormProps {
   onSuccess: (result: LoginResult) => void;
+  /** Pre-fills the email, e.g. from the home page's sign-up box; ignored once the visitor has typed one. */
+  initialEmail?: string;
 }
 
-export function SignUpForm({ onSuccess }: SignUpFormProps) {
+export function SignUpForm({ onSuccess, initialEmail }: SignUpFormProps) {
   const {
     register: field,
     handleSubmit,
     setError,
+    setValue,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
@@ -25,8 +30,13 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
     // mid-click, which shifts the submit button so the click can miss it.)
     mode: 'onSubmit',
     reValidateMode: 'onChange',
-    defaultValues: { fullName: '', email: '', password: '', confirmPassword: '', region: '' },
+    defaultValues: { fullName: '', email: initialEmail ?? '', password: '', confirmPassword: '', region: '' },
   });
+
+  // The query string is only known after hydration, so the email can arrive after the first render.
+  useEffect(() => {
+    if (initialEmail && !getValues('email')) setValue('email', initialEmail);
+  }, [initialEmail, getValues, setValue]);
 
   async function onSubmit({ confirmPassword: _confirm, ...values }: SignUpFormValues) {
     try {

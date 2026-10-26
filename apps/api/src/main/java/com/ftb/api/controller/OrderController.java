@@ -1,6 +1,8 @@
 package com.ftb.api.controller;
 
 import java.util.UUID;
+import java.util.Optional;
+import com.ftb.api.model.OrderStatusGroup;
 
 import com.ftb.api.util.ResponseHandler;
 import jakarta.validation.Valid;
@@ -67,10 +69,15 @@ public class OrderController {
         return ResponseHandler.successResponse("Order details retrieved successfully.", HttpStatus.OK, orderDetails);
     }
 
-    /** The buyer's orders, newest first, {@value #DEFAULT_PAGE_SIZE} per page by default. */
+    /**
+     * The buyer's orders, newest first, {@value #DEFAULT_PAGE_SIZE} per page by default.
+     * @param status Only one order-history tab: active, completed or disputed.
+     */
     @GetMapping
     public ResponseEntity<ApiResponse<PaginatedResponse<OrderSummaryResponseDto>>> listBuyerOrders(
             Authentication authentication,
+            @RequestParam Optional<@Pattern(regexp = "active|completed|disputed",
+                    message = "must be one of active, completed, disputed") String> status,
             @RequestParam(defaultValue = "0")
             @Min(value = 0, message = "must be 0 or greater") int page,
             @RequestParam(defaultValue = "" + DEFAULT_PAGE_SIZE)
@@ -78,7 +85,14 @@ public class OrderController {
             @Max(value = MAX_PAGE_SIZE, message = "must be at most " + MAX_PAGE_SIZE) int size
     ) {
         PaginatedResponse<OrderSummaryResponseDto> orders = orderService.getOrdersForBuyer(
-                authentication.getName(), PageRequest.of(page, size, NEWEST_FIRST));
+                authentication.getName(), status.map(OrderStatusGroup::fromParam), PageRequest.of(page, size, NEWEST_FIRST));
         return ResponseHandler.successResponse("Order history retrieved successfully.", HttpStatus.OK, orders);
+    }
+
+    /** How many of the buyer's orders are in each order-history tab. */
+    @GetMapping("/status-counts")
+    public ResponseEntity<ApiResponse<OrderStatusCountsResponse>> countBuyerOrders(Authentication authentication) {
+        OrderStatusCountsResponse counts = orderService.countOrdersForBuyer(authentication.getName());
+        return ResponseHandler.successResponse("Order counts retrieved successfully.", HttpStatus.OK, counts);
     }
 }

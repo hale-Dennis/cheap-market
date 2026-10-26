@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.UUID;
 import java.util.Optional;
@@ -32,4 +33,14 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     /** A product with its farmer and category, for the public detail page. */
     @EntityGraph(attributePaths = {"farmer", "category"})
     Optional<Product> findWithFarmerAndCategoryById(UUID id);
+
+    /** Listings buyers can see: active, from farmers who aren't suspended (as in the public catalog). */
+    @Query("select count(p) from Product p where p.listingStatus = com.ftb.api.model.ProductStatus.ACTIVE"
+            + " and p.farmer.accountStatus = com.ftb.api.model.AccountStatus.ACTIVE")
+    long countLiveListings();
+
+    /** Regions with at least one listing buyers can see. */
+    @Query("select count(distinct p.farmer.region) from Product p where p.listingStatus = com.ftb.api.model.ProductStatus.ACTIVE"
+            + " and p.farmer.accountStatus = com.ftb.api.model.AccountStatus.ACTIVE")
+    long countRegionsWithLiveListings();
 }

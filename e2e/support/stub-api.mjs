@@ -53,20 +53,43 @@ const PIXEL_PNG = Buffer.from(
 const REGIONS = ['AHAFO', 'ASHANTI', 'BONO', 'BONO_EAST', 'CENTRAL', 'EASTERN', 'GREATER_ACCRA', 'NORTH_EAST',
   'NORTHERN', 'OTI', 'SAVANNAH', 'UPPER_EAST', 'UPPER_WEST', 'VOLTA', 'WESTERN', 'WESTERN_NORTH'];
 
-/** Public catalog: active listings whose farmer is in the region, newest first, 20 per page. */
+const CATALOG_SORTS = ['newest', 'price_asc', 'price_desc', 'top_rated'];
+
+/**
+ * Public catalog: active listings whose farmer is in the region, 20 per page, optionally searched
+ * (?q= produce or farmer name), priced (?minPrice=/?maxPrice= in cedis) and sorted (?sort=).
+ */
 function listCatalog(url, res) {
   const region = url.searchParams.get('region');
   if (!REGIONS.includes(region)) {
     return send(res, 400, { message: "Validation failed: region: Region must be one of Ghana's regions" });
   }
   const categoryId = url.searchParams.get('categoryId');
+  const search = (url.searchParams.get('q') ?? '').trim().toLowerCase();
+  const minPrice = url.searchParams.has('minPrice') ? Number(url.searchParams.get('minPrice')) * 100 : null;
+  const maxPrice = url.searchParams.has('maxPrice') ? Number(url.searchParams.get('maxPrice')) * 100 : null;
+  const sort = url.searchParams.get('sort') ?? 'newest';
+  if (!CATALOG_SORTS.includes(sort)) {
+    return send(res, 400, { message: `Validation failed: sort: must be one of ${CATALOG_SORTS.join(', ')}` });
+  }
+  if (minPrice !== null && maxPrice !== null && minPrice > maxPrice) {
+    return send(res, 400, { message: 'minPrice: must not be more than maxPrice' });
+  }
   const page = Number(url.searchParams.get('page') ?? 0);
   const size = Number(url.searchParams.get('size') ?? 20);
+  const farmerOf = (p) => farmers.find((f) => f.id === p.farmerId);
+  // Newest first; Array.prototype.sort is stable, so this stays the tie-break for the other orders.
   const matching = products
     .filter((p) => p.listingStatus === 'ACTIVE')
-    .filter((p) => farmers.find((f) => f.id === p.farmerId)?.region === region)
+    .filter((p) => farmerOf(p)?.region === region)
     .filter((p) => !categoryId || p.categoryId === categoryId)
+    .filter((p) => !search || p.name.toLowerCase().includes(search) || farmerOf(p).fullName.toLowerCase().includes(search))
+    .filter((p) => minPrice === null || p.priceCents >= minPrice)
+    .filter((p) => maxPrice === null || p.priceCents <= maxPrice)
     .reverse();
+  if (sort === 'price_asc') matching.sort((a, b) => a.priceCents - b.priceCents);
+  if (sort === 'price_desc') matching.sort((a, b) => b.priceCents - a.priceCents);
+  if (sort === 'top_rated') matching.sort((a, b) => (farmerOf(b).averageRating ?? -1) - (farmerOf(a).averageRating ?? -1));
   const content = matching.slice(page * size, (page + 1) * size).map((p) => ({
     id: p.id,
     name: p.name,
@@ -106,6 +129,11 @@ const DELIVERY_FEE_CENTS = 1000;
 const orders = [];
 const notifications = [];
 const ratings = [];
+const STATUS_GROUPS = {
+  active: ['PENDING', 'READY_FOR_PICKUP', 'OUT_FOR_DELIVERY'],
+  completed: ['COMPLETED'],
+  disputed: ['DISPUTED'],
+};
 const disputes = [];
 
 /** Mirrors DisputeService.createDispute: dispute, DISPUTED status and admin notification together. */
@@ -535,12 +563,29 @@ createServer(async (req, res) => {
     if (session.role !== 'BUYER') return send(res, 403, { message: 'You do not have permission to access this resource.' });
     return placeOrder(req, res, session.email);
   }
+  // Mirrors the real API's order-history tabs (OrderStatusGroup).
+  if (url.pathname === '/api/v1/orders/status-counts' && req.method === 'GET') {
+    const session = await sessionFromRequest(req);
+    if (!session) return send(res, 401, { message: 'Authentication is required to access this resource.' });
+    const mine = orders.filter((o) => o.buyerEmail === session.email);
+    const count = (group) => mine.filter((o) => STATUS_GROUPS[group].includes(o.status)).length;
+    return send(res, 200, { message: 'Order counts retrieved successfully.', data: {
+      all: mine.length, active: count('active'), completed: count('completed'), disputed: count('disputed') } });
+  }
   if (url.pathname === '/api/v1/orders' && req.method === 'GET') {
     const session = await sessionFromRequest(req);
     if (!session) return send(res, 401, { message: 'Authentication is required to access this resource.' });
     const page = Number(url.searchParams.get('page') ?? 0);
     const size = Number(url.searchParams.get('size') ?? 10);
-    const mine = orders.filter((o) => o.buyerEmail === session.email).slice().reverse();
+    const group = url.searchParams.get('status');
+    if (group && !STATUS_GROUPS[group]) {
+      return send(res, 400, { message: 'Validation failed: status: must be one of active, completed, disputed' });
+    }
+    const mine = orders
+      .filter((o) => o.buyerEmail === session.email)
+      .filter((o) => !group || STATUS_GROUPS[group].includes(o.status))
+      .slice()
+      .reverse();
     const content = mine.slice(page * size, (page + 1) * size).map((o) => ({
       id: o.id, orderNumber: o.orderNumber, createdAt: o.createdAt, finalTotalCents: o.finalTotalCents,
       status: o.status, fulfillmentType: o.fulfillmentType, itemCount: o.items.reduce((s, i) => s + i.quantity, 0),
@@ -628,6 +673,22 @@ createServer(async (req, res) => {
     const location = { id: randomUUID(), operatingHours: null, ...(await readJson(req)) };
     pickupLocations.push(location);
     return send(res, 201, { message: 'Pickup location created successfully.', data: location });
+  }
+  // Mirrors the real API's StatsService.
+  const liveListings = () =>
+    products.filter((p) => p.listingStatus === 'ACTIVE' && farmers.find((f) => f.id === p.farmerId)?.accountStatus !== 'SUSPENDED');
+  if (req.method === 'GET' && url.pathname === '/api/v1/stats') {
+    const regions = new Set(liveListings().map((p) => farmers.find((f) => f.id === p.farmerId).region));
+    return send(res, 200, { message: 'Stats retrieved successfully.', data: {
+      farmers: farmers.filter((f) => f.accountStatus !== 'SUSPENDED').length, regions: regions.size } });
+  }
+  if (req.method === 'GET' && url.pathname === '/api/v1/admin/stats') {
+    if ((await sessionFromRequest(req))?.role !== 'ADMIN') return send(res, 403, { message: 'Forbidden' });
+    return send(res, 200, { message: 'Stats retrieved successfully.', data: {
+      farmers: farmers.length,
+      liveListings: liveListings().length,
+      ordersInProgress: orders.filter((o) => STATUS_GROUPS.active.includes(o.status)).length,
+      openDisputes: disputes.filter((d) => d.status !== 'RESOLVED').length } });
   }
   if (req.method === 'GET' && url.pathname === '/api/v1/categories') {
     const sorted = [...categories].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));

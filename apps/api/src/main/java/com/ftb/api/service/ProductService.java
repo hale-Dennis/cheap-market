@@ -26,8 +26,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import com.ftb.api.dto.response.ProductResponse;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import com.ftb.api.dto.response.PaginatedResponse;
 import com.ftb.api.dto.request.CreateProductRequest;
+import com.ftb.api.dto.request.CatalogQuery;
 import com.ftb.api.dto.response.ProductCardResponse;
 import com.ftb.api.dto.response.ProductDetailResponse;
 import com.ftb.api.exception.ResourceNotFoundException;
@@ -95,6 +97,12 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public PaginatedResponse<ProductCardResponse> getPublicProducts(String region, Optional<UUID> categoryId, Pageable pageable) {
+        return getPublicProducts(region, categoryId, CatalogQuery.none(), pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public PaginatedResponse<ProductCardResponse> getPublicProducts(
+            String region, Optional<UUID> categoryId, CatalogQuery catalogQuery, Pageable pageable) {
         Specification<Product> spec = ProductSpecification.hasStatus(ProductStatus.ACTIVE)
                 .and(ProductSpecification.inRegion(region))
                 .and(ProductSpecification.fromActiveFarmers());
@@ -102,7 +110,20 @@ public class ProductService {
         if (categoryId.isPresent()) {
             spec = spec.and(ProductSpecification.inCategory(categoryId.get()));
         }
-
+        Optional<String> search = catalogQuery.search().map(String::trim).filter(text -> !text.isEmpty());
+        if (search.isPresent()) {
+            spec = spec.and(ProductSpecification.nameOrFarmerContains(search.get()));
+        }
+        if (catalogQuery.minPrice().isPresent()) {
+            spec = spec.and(ProductSpecification.priceAtLeast(catalogQuery.minPrice().get()));
+        }
+        if (catalogQuery.maxPrice().isPresent()) {
+            spec = spec.and(ProductSpecification.priceAtMost(catalogQuery.maxPrice().get()));
+        }
+        if (catalogQuery.topRatedFirst()) {
+            spec = spec.and(ProductSpecification.orderedByFarmerRating());
+            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        }
 
         Page<Product> productPage = productRepository.findAll(spec, pageable);
 

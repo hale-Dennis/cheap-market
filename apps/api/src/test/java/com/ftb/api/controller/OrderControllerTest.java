@@ -156,7 +156,7 @@ class OrderControllerTest {
 
     @Test
     void listOrders_ShouldRequestTenPerPageNewestFirst() throws Exception {
-        when(orderService.getOrdersForBuyer(eq(EMAIL), any(org.springframework.data.domain.Pageable.class)))
+        when(orderService.getOrdersForBuyer(eq(EMAIL), any(), any(org.springframework.data.domain.Pageable.class)))
                 .thenReturn(com.ftb.api.dto.response.PaginatedResponse.<com.ftb.api.dto.response.OrderSummaryResponseDto>builder()
                         .content(List.of(com.ftb.api.dto.response.OrderSummaryResponseDto.builder()
                                 .id(ORDER).orderNumber("CM-ABCDEFGH").status(OrderStatus.PENDING)
@@ -172,9 +172,50 @@ class OrderControllerTest {
 
         org.mockito.ArgumentCaptor<org.springframework.data.domain.Pageable> pageable =
                 org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
-        verify(orderService).getOrdersForBuyer(eq(EMAIL), pageable.capture());
+        verify(orderService).getOrdersForBuyer(eq(EMAIL), eq(java.util.Optional.empty()), pageable.capture());
         org.junit.jupiter.api.Assertions.assertEquals(10, pageable.getValue().getPageSize());
         org.junit.jupiter.api.Assertions.assertEquals(OrderController.NEWEST_FIRST, pageable.getValue().getSort());
+    }
+
+    @Test
+    void listOrders_WithStatus_ShouldAskForThatTab() throws Exception {
+        when(orderService.getOrdersForBuyer(eq(EMAIL), any(), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(com.ftb.api.dto.response.PaginatedResponse.<com.ftb.api.dto.response.OrderSummaryResponseDto>builder()
+                        .content(List.of()).currentPage(0).totalPages(0).totalElements(0).size(10).build());
+
+        mockMvc.perform(get("/api/v1/orders").param("status", "disputed")).andExpect(status().isOk());
+
+        verify(orderService).getOrdersForBuyer(eq(EMAIL), eq(java.util.Optional.of(com.ftb.api.model.OrderStatusGroup.DISPUTED)),
+                any(org.springframework.data.domain.Pageable.class));
+    }
+
+    @Test
+    void listOrders_UnknownStatus_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/v1/orders").param("status", "PENDING"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString(
+                        "status: must be one of active, completed, disputed")));
+
+        verifyNoInteractions(orderService);
+    }
+
+    @Test
+    void statusCounts_ShouldReturnTheBuyersCountsPerTab() throws Exception {
+        when(orderService.countOrdersForBuyer(EMAIL))
+                .thenReturn(new com.ftb.api.dto.response.OrderStatusCountsResponse(6, 3, 2, 1));
+
+        mockMvc.perform(get("/api/v1/orders/status-counts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.all").value(6))
+                .andExpect(jsonPath("$.data.active").value(3))
+                .andExpect(jsonPath("$.data.completed").value(2))
+                .andExpect(jsonPath("$.data.disputed").value(1));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void statusCounts_AsAdmin_ShouldReturn403() throws Exception {
+        mockMvc.perform(get("/api/v1/orders/status-counts")).andExpect(status().isForbidden());
     }
 
     @Test

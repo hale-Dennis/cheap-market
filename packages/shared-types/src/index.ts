@@ -10,3 +10,4 @@ export * from './product';
 export * from './regions';
 export * from './rating';
 export * from './dispute';
+export * from './stats';

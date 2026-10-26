@@ -53,7 +53,8 @@ test.describe('Placing an order', () => {
     await expect(page).toHaveURL(/\/orders\/confirmation\?orderId=[0-9a-f-]{36}$/);
     await expect(page.getByRole('heading', { name: 'Thank you! Your order is placed.' })).toBeVisible();
     const orderNumber = (await page.getByText(/^CM-[0-9A-Z]{8}$/).innerText()).trim();
-    await expect(page.getByText('Status', { exact: true }).locator('xpath=following-sibling::dd')).toHaveText('Pending');
+    // The current step of the order's status track.
+    await expect(page.getByRole('list', { name: 'Order progress' }).locator('[aria-current="step"]')).toContainText('Pending');
     await expect(page.getByText(`Collect from ${pickup}`)).toBeVisible();
     await expect(page.getByRole('region', { name: 'Items' })).toContainText(`${product} × 3`);
     await expect(page.getByRole('region', { name: 'Items' }).getByText('Total', { exact: true }).locator('xpath=following-sibling::dd')).toHaveText('GH₵ 45.00');

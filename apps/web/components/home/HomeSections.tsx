@@ -5,6 +5,7 @@ import { PRODUCE_TINTS, ProduceArt, type ProduceShape } from '@/components/brand
 import { ProductCard } from '@/components/catalog/ProductCard';
 import { buttonVariants } from '@/components/ui/button';
 import { useCatalogProducts, usePublicCategories } from '@/hooks/useCatalog';
+import { usePublicStats } from '@/hooks/useStats';
 import { cn } from '@/lib/utils';
 
 const SHAPES: ProduceShape[] = ['round', 'oval', 'long', 'oval', 'round', 'oval'];
@@ -23,6 +24,26 @@ function SectionHeading({ title, subtitle, link }: { title: string; subtitle?: s
         </Link>
       )}
     </div>
+  );
+}
+
+/** Farmers selling and regions covered, once there's something worth showing. */
+function HeroStats() {
+  const { data } = usePublicStats();
+  if (!data || data.farmers === 0) return null;
+  const items = [
+    { value: data.farmers, label: data.farmers === 1 ? 'Farmer selling' : 'Farmers selling' },
+    ...(data.regions > 0 ? [{ value: data.regions, label: data.regions === 1 ? 'Region covered' : 'Regions covered' }] : []),
+  ];
+  return (
+    <dl className="flex flex-wrap gap-8 pt-2">
+      {items.map((item) => (
+        <div key={item.label} className="flex flex-col-reverse gap-0.5">
+          <dt className="text-sm text-background/75">{item.label}</dt>
+          <dd className="font-display text-3xl font-bold">{item.value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -56,6 +77,7 @@ export function Hero() {
             Create an account
           </Link>
         </div>
+        <HeroStats />
       </div>
       <div aria-hidden="true" className="mx-auto grid w-full min-w-0 max-w-[520px] flex-[1_1_380px] grid-cols-2 gap-4">
         {SHAPES.slice(0, 4).map((shape, index) => (
@@ -203,14 +225,25 @@ export function CtaBand() {
       <h2 className="flex-[1_1_420px] text-[32px] font-extrabold leading-[1.02] sm:text-[56px]">
         Your next market run starts here.
       </h2>
-      <div className="flex flex-wrap gap-3">
-        <Link href="/signup" className={buttonVariants({ size: 'lg' })}>
-          Create your account
-        </Link>
-        <Link href="/products" className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'bg-card')}>
-          Start shopping
-        </Link>
-      </div>
+      {/* A plain GET form: carries the email to /signup?email=…, where the sign-up form picks it up. */}
+      <form action="/signup" method="get" className="flex flex-[1_1_380px] flex-wrap gap-2.5">
+        <label htmlFor="cta-email" className="sr-only">
+          Email address
+        </label>
+        <input
+          id="cta-email"
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          maxLength={254}
+          placeholder="you@example.com"
+          className="h-14 min-w-0 flex-[1_1_220px] rounded-full border-0 bg-card px-5 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        />
+        <button type="submit" className={buttonVariants({ size: 'lg' })}>
+          Get started
+        </button>
+      </form>
     </section>
   );
 }
