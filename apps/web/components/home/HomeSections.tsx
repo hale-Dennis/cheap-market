@@ -225,14 +225,25 @@ export function CtaBand() {
       <h2 className="flex-[1_1_420px] text-[32px] font-extrabold leading-[1.02] sm:text-[56px]">
         Your next market run starts here.
       </h2>
-      <div className="flex flex-wrap gap-3">
-        <Link href="/signup" className={buttonVariants({ size: 'lg' })}>
-          Create your account
-        </Link>
-        <Link href="/products" className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'bg-card')}>
-          Start shopping
-        </Link>
-      </div>
+      {/* A plain GET form: carries the email to /signup?email=…, where the sign-up form picks it up. */}
+      <form action="/signup" method="get" className="flex flex-[1_1_380px] flex-wrap gap-2.5">
+        <label htmlFor="cta-email" className="sr-only">
+          Email address
+        </label>
+        <input
+          id="cta-email"
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          maxLength={254}
+          placeholder="you@example.com"
+          className="h-14 min-w-0 flex-[1_1_220px] rounded-full border-0 bg-card px-5 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        />
+        <button type="submit" className={buttonVariants({ size: 'lg' })}>
+          Get started
+        </button>
+      </form>
     </section>
   );
 }

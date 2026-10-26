@@ -118,4 +118,23 @@ describe('SignUpForm', () => {
     expect(onSuccess).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Create account' })).toBeEnabled();
   });
+
+  it('pre-fills the email passed from the home page, arriving after the first render', async () => {
+    const { rerender } = render(<SignUpForm onSuccess={jest.fn()} />);
+    expect(screen.getByLabelText('Email')).toHaveValue('');
+
+    rerender(<SignUpForm onSuccess={jest.fn()} initialEmail="ama@example.com" />);
+
+    expect(await screen.findByDisplayValue('ama@example.com')).toBe(screen.getByLabelText('Email'));
+  });
+
+  it("doesn't overwrite an email the visitor has already typed", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<SignUpForm onSuccess={jest.fn()} />);
+    await user.type(screen.getByLabelText('Email'), 'typed@example.com');
+
+    rerender(<SignUpForm onSuccess={jest.fn()} initialEmail="ama@example.com" />);
+
+    expect(screen.getByLabelText('Email')).toHaveValue('typed@example.com');
+  });
 });

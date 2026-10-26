@@ -10,6 +10,7 @@ import type { LoginResult } from '@/services/authService';
 export default function SignUpPage() {
   const router = useRouter();
   const next = router.query.next;
+  const email = typeof router.query.email === 'string' ? router.query.email.trim().slice(0, 254) : undefined;
   const signInHref =
     typeof next === 'string' ? `/login?next=${encodeURIComponent(next)}` : '/login';
 
@@ -31,7 +32,7 @@ export default function SignUpPage() {
         </>
       }
     >
-      <SignUpForm onSuccess={handleSuccess} />
+      <SignUpForm onSuccess={handleSuccess} initialEmail={email} />
     </AuthCard>
   );
 }
