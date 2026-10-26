@@ -4,7 +4,12 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { logout } from '@/services/authService';
 
-export function SignOutButton({ redirectTo = '/login' }: { redirectTo?: string }) {
+interface SignOutButtonProps {
+  redirectTo?: string;
+  className?: string;
+}
+
+export function SignOutButton({ redirectTo = '/login', className }: SignOutButtonProps) {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
 
@@ -15,7 +20,7 @@ export function SignOutButton({ redirectTo = '/login' }: { redirectTo?: string }
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={handleClick} disabled={signingOut}>
+    <Button variant="outline" size="sm" className={className} onClick={handleClick} disabled={signingOut}>
       {signingOut ? 'Signing out…' : 'Sign out'}
     </Button>
   );
