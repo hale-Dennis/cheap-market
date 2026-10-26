@@ -94,7 +94,7 @@ test.describe('Rating farmers', () => {
 
     // The rating counts towards the farmer's average on their products.
     await page.goto(`/products/${yamId}`);
-    await expect(page.getByText('Sold by').locator('..')).toContainText('4.0 out of 5 (1 rating)');
+    await expect(page.getByRole('region', { name: 'Farmer' })).toContainText('4.0 out of 5 (1 rating)');
   });
 
   test('a second rating for the same farmer and order is blocked', async ({ page }) => {

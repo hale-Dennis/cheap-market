@@ -16,7 +16,7 @@ export function FarmerInfo({ farmer }: { farmer: FarmerSummary }) {
   const rated = count > 0 && farmer.averageRating !== null;
 
   return (
-    <div className="flex flex-wrap items-center gap-4 rounded-3xl border bg-card p-5">
+    <section aria-label="Farmer" className="flex flex-wrap items-center gap-4 rounded-3xl border bg-card p-5">
       <span aria-hidden="true" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-muted text-lg font-bold">
         {initials(farmer.fullName)}
       </span>
@@ -41,6 +41,6 @@ export function FarmerInfo({ farmer }: { farmer: FarmerSummary }) {
           <span className="text-muted-foreground">No ratings yet</span>
         )}
       </div>
-    </div>
+    </section>
   );
 }
