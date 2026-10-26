@@ -30,6 +30,7 @@ import com.ftb.api.mapper.RatingMapper;
 import com.ftb.api.mapper.DisputeMapper;
 import com.ftb.api.dto.response.OrderFarmerDto;
 import com.ftb.api.dto.response.OrderSummaryResponseDto;
+import com.ftb.api.dto.response.OrderStatusCountsResponse;
 import com.ftb.api.dto.response.PaginatedResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -216,12 +217,20 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public PaginatedResponse<OrderSummaryResponseDto> getOrdersForBuyer(String buyerEmail, Pageable pageable) {
+        return getOrdersForBuyer(buyerEmail, Optional.empty(), pageable);
+    }
+
+    /** The buyer's orders, optionally only one order-history tab (status group). */
+    @Transactional(readOnly = true)
+    public PaginatedResponse<OrderSummaryResponseDto> getOrdersForBuyer(
+            String buyerEmail, Optional<OrderStatusGroup> group, Pageable pageable) {
 
         User buyer = userRepository.findByEmail(buyerEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + buyerEmail));
 
-
-        Page<Order> orderPage = orderRepository.findByBuyerId(buyer.getId(), pageable);
+        Page<Order> orderPage = group
+                .map(g -> orderRepository.findByBuyerIdAndStatusIn(buyer.getId(), g.getStatuses(), pageable))
+                .orElseGet(() -> orderRepository.findByBuyerId(buyer.getId(), pageable));
 
 
         List<OrderSummaryResponseDto> orderSummaries = orderPage.getContent().stream()
@@ -245,6 +254,22 @@ public class OrderService {
                 .totalElements(orderPage.getTotalElements())
                 .size(orderPage.getSize())
                 .build();
+    }
+
+    /** How many of the buyer's orders are in each order-history tab. */
+    @Transactional(readOnly = true)
+    public OrderStatusCountsResponse countOrdersForBuyer(String buyerEmail) {
+        User buyer = userRepository.findByEmail(buyerEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + buyerEmail));
+
+        Map<OrderStatusGroup, Long> byGroup = new java.util.EnumMap<>(OrderStatusGroup.class);
+        for (OrderRepository.StatusCount row : orderRepository.countByStatusForBuyer(buyer.getId())) {
+            byGroup.merge(OrderStatusGroup.of(row.getStatus()), row.getTotal(), Long::sum);
+        }
+        long active = byGroup.getOrDefault(OrderStatusGroup.ACTIVE, 0L);
+        long completed = byGroup.getOrDefault(OrderStatusGroup.COMPLETED, 0L);
+        long disputed = byGroup.getOrDefault(OrderStatusGroup.DISPUTED, 0L);
+        return new OrderStatusCountsResponse(active + completed + disputed, active, completed, disputed);
     }
 
     @Transactional

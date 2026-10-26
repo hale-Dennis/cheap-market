@@ -7,12 +7,18 @@ import type { OrderDetail, OrderStatus, OrderSummary, PaginatedResponse } from '
 import { OrderConfirmation } from '../components/orders/OrderConfirmation';
 import { OrderHistory } from '../components/orders/OrderHistory';
 import { STATUS_LABELS, StatusBadge } from '../components/orders/StatusBadge';
-import { getOrder, listOrders } from '../services/orderService';
+import { countOrders, getOrder, listOrders } from '../services/orderService';
 
-jest.mock('../services/orderService', () => ({ listOrders: jest.fn(), getOrder: jest.fn(), placeOrder: jest.fn() }));
+jest.mock('../services/orderService', () => ({
+  listOrders: jest.fn(),
+  countOrders: jest.fn(),
+  getOrder: jest.fn(),
+  placeOrder: jest.fn(),
+}));
 
 const mockedList = listOrders as jest.MockedFunction<typeof listOrders>;
 const mockedGet = getOrder as jest.MockedFunction<typeof getOrder>;
+const mockedCounts = countOrders as jest.MockedFunction<typeof countOrders>;
 
 function wrapper({ children }: { children: ReactNode }) {
   return <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>{children}</SWRConfig>;
@@ -62,6 +68,8 @@ function scrollNearEnd() {
 beforeEach(() => {
   mockedList.mockReset();
   mockedGet.mockReset();
+  mockedCounts.mockReset();
+  mockedCounts.mockResolvedValue({ all: 0, active: 0, completed: 0, disputed: 0 });
   observerCallback = null;
   delete (global as unknown as { IntersectionObserver?: unknown }).IntersectionObserver;
 });
@@ -159,6 +167,46 @@ describe('OrderHistory', () => {
     await waitFor(() =>
       expect(within(screen.getByRole('list', { name: 'Your orders' })).getAllByRole('listitem')).toHaveLength(15),
     );
+  });
+});
+
+describe('OrderHistory tabs', () => {
+  it('shows each tab with its count and lists only that tab’s orders', async () => {
+    mockedCounts.mockResolvedValue({ all: 3, active: 1, completed: 1, disputed: 1 });
+    mockedList.mockImplementation(async (page = 0, status) => {
+      const content = status === 'disputed' ? [order(3, { status: 'DISPUTED' })] : [order(1), order(2), order(3)];
+      return { content, currentPage: page, totalPages: 1, totalElements: content.length, size: 10 };
+    });
+    const user = userEvent.setup();
+    render(<OrderHistory />, { wrapper });
+
+    const tabs = await screen.findByRole('group', { name: 'Filter orders' });
+    expect(await within(tabs).findByRole('button', { name: 'Disputed 1' })).toHaveAttribute('aria-pressed', 'false');
+    expect(within(tabs).getByRole('button', { name: 'All 3' })).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(within(tabs).getByRole('button', { name: 'Disputed 1' }));
+
+    await waitFor(() =>
+      expect(within(screen.getByRole('list', { name: 'Your orders' })).getAllByRole('listitem')).toHaveLength(1),
+    );
+    expect(mockedList).toHaveBeenLastCalledWith(0, 'disputed');
+    expect(within(tabs).getByRole('button', { name: 'Disputed 1' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('1 order')).toBeInTheDocument();
+  });
+
+  it('explains an empty tab without the first-order welcome', async () => {
+    mockedCounts.mockResolvedValue({ all: 2, active: 2, completed: 0, disputed: 0 });
+    mockedList.mockImplementation(async (page = 0, status) => {
+      const content = status === 'completed' ? [] : [order(1), order(2)];
+      return { content, currentPage: page, totalPages: content.length ? 1 : 0, totalElements: content.length, size: 10 };
+    });
+    const user = userEvent.setup();
+    render(<OrderHistory />, { wrapper });
+
+    await user.click(await screen.findByRole('button', { name: /^Completed/ }));
+
+    expect(await screen.findByText('No completed orders yet.')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'No orders yet' })).not.toBeInTheDocument();
   });
 });
 

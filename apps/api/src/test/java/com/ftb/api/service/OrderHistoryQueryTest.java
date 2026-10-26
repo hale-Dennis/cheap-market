@@ -1,5 +1,7 @@
 package com.ftb.api.service;
 
+import com.ftb.api.dto.response.OrderStatusCountsResponse;
+
 import java.util.List;
 import java.util.Map;
 import java.time.Instant;
@@ -139,5 +141,38 @@ class OrderHistoryQueryTest {
 
         assertTrue(result.getContent().isEmpty());
         assertEquals(0, result.getTotalElements());
+    }
+
+    @Test
+    void filtersByStatusGroup() {
+        Order pending = order(buyer, 50, OrderStatus.PENDING, 1);
+        Order outForDelivery = order(buyer, 40, OrderStatus.OUT_FOR_DELIVERY, 1);
+        Order completed = order(buyer, 30, OrderStatus.COMPLETED, 1);
+        Order disputed = order(buyer, 20, OrderStatus.DISPUTED, 1);
+        order(otherBuyer, 10, OrderStatus.DISPUTED, 1);
+        entityManager.clear();
+
+        assertEquals(List.of(outForDelivery.getId(), pending.getId()), ids(OrderStatusGroup.ACTIVE));
+        assertEquals(List.of(completed.getId()), ids(OrderStatusGroup.COMPLETED));
+        assertEquals(List.of(disputed.getId()), ids(OrderStatusGroup.DISPUTED));
+    }
+
+    @Test
+    void countsOrdersPerTab() {
+        order(buyer, 50, OrderStatus.PENDING, 1);
+        order(buyer, 40, OrderStatus.READY_FOR_PICKUP, 1);
+        order(buyer, 30, OrderStatus.COMPLETED, 1);
+        order(buyer, 20, OrderStatus.DISPUTED, 1);
+        order(buyer, 10, OrderStatus.DISPUTED, 1);
+        order(otherBuyer, 5, OrderStatus.PENDING, 1);
+        entityManager.clear();
+
+        assertEquals(new OrderStatusCountsResponse(5, 2, 1, 2), orderService.countOrdersForBuyer(buyer.getEmail()));
+        assertEquals(new OrderStatusCountsResponse(1, 1, 0, 0), orderService.countOrdersForBuyer(otherBuyer.getEmail()));
+    }
+
+    private List<java.util.UUID> ids(OrderStatusGroup group) {
+        return orderService.getOrdersForBuyer(buyer.getEmail(), java.util.Optional.of(group), PageRequest.of(0, 10, NEWEST_FIRST))
+                .getContent().stream().map(OrderSummaryResponseDto::getId).toList();
     }
 }

@@ -84,6 +84,17 @@ export interface AdminNotifications {
 }
 
 /** One row of the buyer's order history (see OrderSummaryResponseDto.java). */
+/** The buyer's order-history tabs, as GET /orders?status= accepts them. */
+export type OrderStatusGroup = 'active' | 'completed' | 'disputed';
+
+/** GET /orders/status-counts: how many of the buyer's orders are in each tab. */
+export interface OrderStatusCounts {
+  all: number;
+  active: number;
+  completed: number;
+  disputed: number;
+}
+
 export interface OrderSummary {
   id: string;
   orderNumber: string;

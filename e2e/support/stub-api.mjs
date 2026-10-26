@@ -129,6 +129,11 @@ const DELIVERY_FEE_CENTS = 1000;
 const orders = [];
 const notifications = [];
 const ratings = [];
+const STATUS_GROUPS = {
+  active: ['PENDING', 'READY_FOR_PICKUP', 'OUT_FOR_DELIVERY'],
+  completed: ['COMPLETED'],
+  disputed: ['DISPUTED'],
+};
 const disputes = [];
 
 /** Mirrors DisputeService.createDispute: dispute, DISPUTED status and admin notification together. */
@@ -558,12 +563,29 @@ createServer(async (req, res) => {
     if (session.role !== 'BUYER') return send(res, 403, { message: 'You do not have permission to access this resource.' });
     return placeOrder(req, res, session.email);
   }
+  // Mirrors the real API's order-history tabs (OrderStatusGroup).
+  if (url.pathname === '/api/v1/orders/status-counts' && req.method === 'GET') {
+    const session = await sessionFromRequest(req);
+    if (!session) return send(res, 401, { message: 'Authentication is required to access this resource.' });
+    const mine = orders.filter((o) => o.buyerEmail === session.email);
+    const count = (group) => mine.filter((o) => STATUS_GROUPS[group].includes(o.status)).length;
+    return send(res, 200, { message: 'Order counts retrieved successfully.', data: {
+      all: mine.length, active: count('active'), completed: count('completed'), disputed: count('disputed') } });
+  }
   if (url.pathname === '/api/v1/orders' && req.method === 'GET') {
     const session = await sessionFromRequest(req);
     if (!session) return send(res, 401, { message: 'Authentication is required to access this resource.' });
     const page = Number(url.searchParams.get('page') ?? 0);
     const size = Number(url.searchParams.get('size') ?? 10);
-    const mine = orders.filter((o) => o.buyerEmail === session.email).slice().reverse();
+    const group = url.searchParams.get('status');
+    if (group && !STATUS_GROUPS[group]) {
+      return send(res, 400, { message: 'Validation failed: status: must be one of active, completed, disputed' });
+    }
+    const mine = orders
+      .filter((o) => o.buyerEmail === session.email)
+      .filter((o) => !group || STATUS_GROUPS[group].includes(o.status))
+      .slice()
+      .reverse();
     const content = mine.slice(page * size, (page + 1) * size).map((o) => ({
       id: o.id, orderNumber: o.orderNumber, createdAt: o.createdAt, finalTotalCents: o.finalTotalCents,
       status: o.status, fulfillmentType: o.fulfillmentType, itemCount: o.items.reduce((s, i) => s + i.quantity, 0),

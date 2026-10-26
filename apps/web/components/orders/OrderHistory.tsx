@@ -1,13 +1,14 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import type { OrderFarmer, OrderSummary } from '@cheap-market/shared-types';
+import type { OrderFarmer, OrderStatusGroup, OrderSummary } from '@cheap-market/shared-types';
 
 import { StatusBadge } from '@/components/orders/StatusBadge';
 import { RateFarmerModal } from '@/components/ratings/RateFarmerModal';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { useOrderHistory } from '@/hooks/useOrderHistory';
+import { useOrderHistory, useOrderStatusCounts } from '@/hooks/useOrderHistory';
 import { formatCedis } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import { ApiError } from '@/services/apiClient';
 
 /** Start loading the next page while the buyer is still this far from the end of the list. */
@@ -91,9 +92,57 @@ function EmptyOrders() {
   );
 }
 
-/** The buyer's orders, newest first, loading more as they scroll. */
+type Tab = 'all' | OrderStatusGroup;
+
+const TABS: { value: Tab; label: string; empty: string }[] = [
+  { value: 'all', label: 'All', empty: '' },
+  { value: 'active', label: 'Active', empty: 'No orders on their way right now.' },
+  { value: 'completed', label: 'Completed', empty: 'No completed orders yet.' },
+  { value: 'disputed', label: 'Disputed', empty: 'No orders with a reported issue.' },
+];
+
+/** All | Active | Completed | Disputed, each with its count once loaded. */
+function OrderTabs({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void }) {
+  const { data: counts } = useOrderStatusCounts();
+  return (
+    <div role="group" aria-label="Filter orders" className="flex flex-wrap gap-1.5 self-start rounded-full border bg-card p-1.5">
+      {TABS.map((option) => {
+        const selected = option.value === tab;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            aria-pressed={selected}
+            onClick={() => onChange(option.value)}
+            className={cn(
+              'flex min-h-11 items-center gap-2 rounded-full px-4 text-[15px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              selected ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
+            )}
+          >
+            {option.label}
+            {counts && (
+              <span
+                className={cn(
+                  'flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-bold',
+                  selected ? 'bg-accent text-accent-foreground' : 'bg-muted',
+                )}
+              >
+                {counts[option.value]}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** The buyer's orders, newest first, loading more as they scroll, filtered by tab. */
 export function OrderHistory() {
-  const { orders, total, error, isLoading, hasMore, loadingMore, loadMore, refresh } = useOrderHistory();
+  const [tab, setTab] = useState<Tab>('all');
+  const { orders, total, error, isLoading, hasMore, loadingMore, loadMore, refresh } = useOrderHistory(
+    tab === 'all' ? undefined : tab,
+  );
   const sentinel = useRef<HTMLDivElement>(null);
   const [rating, setRating] = useState<{ orderId: string; farmer: OrderFarmer } | null>(null);
 
@@ -120,18 +169,27 @@ export function OrderHistory() {
       </Card>
     );
   }
-  if (isLoading) {
-    return <Spinner label="Loading your orders…" />;
-  }
-  if (orders.length === 0) {
+  // A buyer with no orders at all sees the welcome empty state, not empty tabs.
+  if (tab === 'all' && !isLoading && orders.length === 0) {
     return <EmptyOrders />;
   }
 
   return (
     <div className="space-y-4">
-      <p className="text-[15px] text-muted-foreground">
-        {total} {total === 1 ? 'order' : 'orders'}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <OrderTabs tab={tab} onChange={setTab} />
+        {!isLoading && (
+          <p className="text-[15px] text-muted-foreground">
+            {total} {total === 1 ? 'order' : 'orders'}
+          </p>
+        )}
+      </div>
+      {isLoading && <Spinner label="Loading your orders…" />}
+      {!isLoading && orders.length === 0 && (
+        <Card className="border-dashed px-6 py-10 text-center">
+          <p className="text-[15px] text-muted-foreground">{TABS.find((option) => option.value === tab)!.empty}</p>
+        </Card>
+      )}
       <div>
         <ul className="space-y-4" aria-label="Your orders">
           {orders.map((order) => (

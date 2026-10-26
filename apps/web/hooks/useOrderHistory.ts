@@ -1,18 +1,22 @@
+import useSWR from 'swr';
 import useSWRInfinite from 'swr/infinite';
-import type { OrderSummary, PaginatedResponse } from '@cheap-market/shared-types';
+import type { OrderStatusGroup, OrderSummary, PaginatedResponse } from '@cheap-market/shared-types';
 
-import { listOrders } from '@/services/orderService';
+import { countOrders, listOrders } from '@/services/orderService';
 
 type Page = PaginatedResponse<OrderSummary>;
 
-/** The buyer's orders, loaded a page at a time for infinite scrolling. */
-export function useOrderHistory() {
+/**
+ * The buyer's orders, loaded a page at a time for infinite scrolling.
+ * @param status Only one order-history tab; every order when not given.
+ */
+export function useOrderHistory(status?: OrderStatusGroup) {
   const result = useSWRInfinite<Page>(
     (index, previous: Page | null) => {
       if (previous && previous.currentPage >= previous.totalPages - 1) return null; // no more pages
-      return ['orders', index];
+      return ['orders', status ?? 'all', index];
     },
-    ([, index]: [string, number]) => listOrders(index),
+    ([, , index]: [string, string, number]) => listOrders(index, status),
     // Don't re-fetch every loaded page whenever a new one is requested.
     { revalidateFirstPage: false },
   );
@@ -34,4 +38,9 @@ export function useOrderHistory() {
     /** Re-fetches every loaded page, e.g. after a rating changes what a row shows. */
     refresh: () => result.mutate(),
   };
+}
+
+/** How many orders are in each order-history tab. */
+export function useOrderStatusCounts() {
+  return useSWR('orders/status-counts', countOrders);
 }

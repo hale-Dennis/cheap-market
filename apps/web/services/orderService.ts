@@ -1,5 +1,7 @@
 import type {
   OrderDetail,
+  OrderStatusCounts,
+  OrderStatusGroup,
   OrderSummary,
   PaginatedResponse,
   PlacedOrder,
@@ -22,10 +24,20 @@ export function placeOrder(request: PlaceOrderRequest, idempotencyKey: string): 
 
 export const ORDERS_PAGE_SIZE = 10;
 
-/** The buyer's orders, newest first. @param page Zero-based. */
-export function listOrders(page = 0): Promise<PaginatedResponse<OrderSummary>> {
+/**
+ * The buyer's orders, newest first.
+ * @param page Zero-based.
+ * @param status Only one order-history tab; every order when not given.
+ */
+export function listOrders(page = 0, status?: OrderStatusGroup): Promise<PaginatedResponse<OrderSummary>> {
   const params = new URLSearchParams({ page: String(page), size: String(ORDERS_PAGE_SIZE) });
+  if (status) params.set('status', status);
   return apiRequest<PaginatedResponse<OrderSummary>>(`/orders?${params}`);
+}
+
+/** How many of the buyer's orders are in each order-history tab. */
+export function countOrders(): Promise<OrderStatusCounts> {
+  return apiRequest<OrderStatusCounts>('/orders/status-counts');
 }
 
 export function getOrder(orderId: string): Promise<OrderDetail> {

@@ -2,6 +2,9 @@ package com.ftb.api.repository;
 
 import java.util.UUID;
 import com.ftb.api.model.Order;
+import com.ftb.api.model.OrderStatus;
+import java.util.Collection;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
@@ -22,6 +25,18 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
      * @return A Page object containing the buyer's orders.
      */
     Page<Order> findByBuyerId(UUID buyerId, Pageable pageable);
+
+    /** The buyer's orders in any of the given statuses, e.g. one order-history tab. */
+    Page<Order> findByBuyerIdAndStatusIn(UUID buyerId, Collection<OrderStatus> statuses, Pageable pageable);
+
+    /** How many orders the buyer has in each status that has any. */
+    @Query("select o.status as status, count(o) as total from Order o where o.buyer.id = :buyerId group by o.status")
+    List<StatusCount> countByStatusForBuyer(UUID buyerId);
+
+    interface StatusCount {
+        OrderStatus getStatus();
+        long getTotal();
+    }
 
     /**
      * Checks if any order is associated with the given pickup location ID.
