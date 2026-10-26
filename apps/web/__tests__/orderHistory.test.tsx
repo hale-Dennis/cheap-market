@@ -74,9 +74,9 @@ describe('StatusBadge', () => {
 
   it('uses the colour for each status', () => {
     const { rerender } = render(<StatusBadge status="PENDING" />);
-    expect(screen.getByText('Pending')).toHaveClass('bg-amber-100');
+    expect(screen.getByText('Pending')).toHaveClass('bg-status-pending');
     rerender(<StatusBadge status="DISPUTED" />);
-    expect(screen.getByText('Disputed')).toHaveClass('bg-red-100');
+    expect(screen.getByText('Disputed')).toHaveClass('bg-status-disputed');
   });
 });
 
