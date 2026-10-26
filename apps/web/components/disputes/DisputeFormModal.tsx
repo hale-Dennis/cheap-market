@@ -89,7 +89,7 @@ export function DisputeFormModal({ orderId, orderNumber, open, onOpenChange, onR
               value={reason}
               onChange={(event) => setReason(event.target.value.slice(0, DISPUTE_REASON_MAX))}
               aria-describedby="dispute-reason-count"
-              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="flex w-full rounded-2xl border border-input bg-background px-4 py-3 text-[15px] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
             <p id="dispute-reason-count" className="text-right text-sm text-muted-foreground">
               {reason.length}/{DISPUTE_REASON_MAX} characters

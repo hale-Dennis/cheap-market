@@ -36,7 +36,7 @@ function StarPicker({ value, onChange }: { value: number; onChange: (score: numb
 
   return (
     <fieldset>
-      <legend className="text-sm font-medium">Your rating</legend>
+      <legend className="text-[15px] font-bold">Your rating</legend>
       <div className="mt-2 flex gap-1" onMouseLeave={() => setHovered(0)}>
         {[1, 2, 3, 4, 5].map((score) => (
           <label key={score} className="cursor-pointer" onMouseEnter={() => setHovered(score)}>
@@ -51,7 +51,7 @@ function StarPicker({ value, onChange }: { value: number; onChange: (score: numb
             <span
               aria-hidden="true"
               className={cn(
-                'block rounded px-0.5 text-3xl leading-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring',
+                'flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-3xl leading-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring',
                 score <= shown ? 'text-amber-600' : 'text-muted-foreground',
               )}
             >
@@ -131,7 +131,7 @@ export function RateFarmerModal({ orderId, farmer, onClose, onRated }: RateFarme
               value={comment}
               onChange={(event) => setComment(event.target.value.slice(0, RATING_COMMENT_MAX))}
               aria-describedby="rating-comment-count"
-              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="flex w-full rounded-2xl border border-input bg-background px-4 py-3 text-[15px] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
             <p id="rating-comment-count" className="text-right text-sm text-muted-foreground">
               {comment.length}/{RATING_COMMENT_MAX} characters

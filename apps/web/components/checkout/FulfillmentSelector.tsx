@@ -39,8 +39,8 @@ function Option({ value, title, badge, checked, disabled, onSelect, children }: 
   return (
     <div
       className={cn(
-        'rounded-lg border bg-background p-4',
-        checked && 'border-primary ring-1 ring-primary',
+        'rounded-[22px] border-2 bg-card p-5',
+        checked && 'border-primary bg-background',
         disabled && 'bg-muted',
       )}
     >
@@ -54,14 +54,14 @@ function Option({ value, title, badge, checked, disabled, onSelect, children }: 
           disabled={disabled}
           onChange={onSelect}
           aria-describedby={`${id}-details`}
-          className="mt-1 h-4 w-4 accent-[hsl(var(--primary))]"
+          className="mt-0.5 h-5 w-5 accent-[hsl(var(--primary))]"
         />
         <div className="min-w-0 flex-1">
-          <label htmlFor={id} className={cn('flex justify-between gap-2 font-medium', !disabled && 'cursor-pointer')}>
+          <label htmlFor={id} className={cn('flex flex-wrap justify-between gap-2 text-[17px] font-bold', !disabled && 'cursor-pointer')}>
             <span>{title}</span>
-            <span className="text-sm text-muted-foreground">{badge}</span>
+            <span className="rounded-full bg-muted px-3 py-1 text-sm font-bold">{badge}</span>
           </label>
-          <div id={`${id}-details`} className="mt-1 text-sm text-muted-foreground">
+          <div id={`${id}-details`} className="mt-1.5 text-[15px] text-muted-foreground">
             {children}
           </div>
         </div>
@@ -84,7 +84,7 @@ export function FulfillmentSelector({
 
   return (
     <fieldset aria-describedby={error ? 'fulfillment-error' : undefined} className="space-y-3">
-      <legend className="mb-3 text-lg font-semibold">How would you like to get your order?</legend>
+      <legend className="mb-4 font-display text-2xl font-bold">How would you like to get your order?</legend>
 
       <Option
         value="DELIVERY"
@@ -162,7 +162,7 @@ export function FulfillmentSelector({
       </Option>
 
       {error && (
-        <p id="fulfillment-error" role="alert" className="text-sm text-destructive">
+        <p id="fulfillment-error" role="alert" className="text-sm font-semibold text-destructive">
           {error}
         </p>
       )}

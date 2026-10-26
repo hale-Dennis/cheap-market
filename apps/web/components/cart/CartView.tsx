@@ -27,7 +27,7 @@ function errorMessage(error: unknown) {
 
 function EmptyCart() {
   return (
-    <Card className="flex flex-col items-center gap-4 px-6 py-14 text-center">
+    <Card className="flex flex-col items-center gap-4 border-dashed px-6 py-14 text-center">
       <svg aria-hidden="true" viewBox="0 0 64 64" className="h-16 w-16 text-muted-foreground">
         <path
           d="M10 22h44l-5 30H15L10 22zm12 0c0-6 4-12 10-12s10 6 10 12"
@@ -38,8 +38,8 @@ function EmptyCart() {
           strokeLinejoin="round"
         />
       </svg>
-      <h2 className="text-xl font-semibold">Your cart is empty</h2>
-      <p className="max-w-sm text-sm text-muted-foreground">
+      <h2 className="text-[28px] font-extrabold">Your cart is empty</h2>
+      <p className="max-w-sm text-[15px] text-muted-foreground">
         Fresh produce from farmers near you is waiting. Add a few items and they&apos;ll appear here.
       </p>
       <Link href="/products" className={buttonVariants()}>
@@ -62,7 +62,7 @@ function CartRow({ item }: { item: CartItem }) {
   }
 
   return (
-    <li className="flex gap-4 py-4">
+    <li className="flex gap-4 rounded-[28px] border bg-card p-3.5 sm:gap-5">
       {/* Mouse shortcut only: the product name below is the accessible link to the same page. */}
       <Link href={`/products/${item.productId}`} className="shrink-0" tabIndex={-1} aria-hidden="true">
         {/* eslint-disable-next-line @next/next/no-img-element -- Cloudinary sizing via sizedImageUrl */}
@@ -70,12 +70,12 @@ function CartRow({ item }: { item: CartItem }) {
           src={item.primaryImageUrl ? sizedImageUrl(item.primaryImageUrl, 192) : PLACEHOLDER_IMAGE}
           alt=""
           loading="lazy"
-          className="h-16 w-16 rounded-md border bg-muted object-cover sm:h-24 sm:w-24"
+          className="h-20 w-20 rounded-[20px] bg-muted object-cover sm:h-28 sm:w-28"
         />
       </Link>
-      <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:justify-between">
+      <div className="flex min-w-0 flex-1 flex-col gap-3 py-1 pr-1 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <Link href={`/products/${item.productId}`} className="font-semibold hover:underline">
+          <Link href={`/products/${item.productId}`} className="text-lg font-bold hover:underline">
             {item.name}
           </Link>
           <p className="text-sm text-muted-foreground">
@@ -96,12 +96,12 @@ function CartRow({ item }: { item: CartItem }) {
             onChange={(quantity) => run(() => actions.updateQuantity(item.productId, quantity))}
           />
           <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-1">
-            <p className={item.available ? 'whitespace-nowrap font-semibold' : 'whitespace-nowrap font-semibold text-muted-foreground line-through'}>
+            <p className={item.available ? 'whitespace-nowrap font-display text-xl font-bold' : 'whitespace-nowrap font-display text-xl font-bold text-muted-foreground line-through'}>
               {formatCedis(item.lineTotalCents)}
             </p>
             <button
               type="button"
-              className="text-sm text-destructive hover:underline"
+              className="min-h-11 text-sm font-semibold text-destructive hover:underline"
               onClick={() => run(() => actions.removeItem(item.productId), `${item.name} removed from your cart.`)}
               aria-label={`Remove ${item.name}`}
             >
@@ -150,55 +150,64 @@ export function CartView() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
-      <Card className="h-fit px-4 sm:px-6">
-        <ul className="divide-y" aria-label="Items in your cart">
+    <div className="grid gap-7 lg:grid-cols-[1fr_24rem]">
+      <div className="h-fit">
+        <ul className="space-y-4" aria-label="Items in your cart">
           {cart.items.map((item) => (
             <CartRow key={item.productId} item={item} />
           ))}
         </ul>
-      </Card>
+      </div>
 
-      <Card className="h-fit space-y-4 p-6">
-        <h2 className="text-lg font-semibold">Order summary</h2>
-        <dl className="space-y-2 text-sm">
+      <section aria-labelledby="cart-summary-heading" className="h-fit space-y-5 rounded-[32px] bg-primary p-7 text-primary-foreground">
+        <h2 id="cart-summary-heading" className="text-[26px] font-bold">Order summary</h2>
+        <dl className="space-y-3 text-base">
           <div className="flex justify-between">
-            <dt>Items ({chargedQuantity})</dt>
-            <dd>{formatCedis(cart.subtotalCents)}</dd>
+            <dt className="text-primary-foreground/80">Items ({chargedQuantity})</dt>
+            <dd className="font-semibold">{formatCedis(cart.subtotalCents)}</dd>
           </div>
-          <div className="flex justify-between text-muted-foreground">
+          <div className="flex justify-between text-primary-foreground/80">
             <dt>Delivery</dt>
             <dd>Chosen at checkout</dd>
           </div>
-          <div className="flex justify-between border-t pt-2 text-base font-semibold">
-            <dt>Subtotal</dt>
-            <dd aria-live="polite">{formatCedis(cart.subtotalCents)}</dd>
+          <div className="flex items-baseline justify-between border-t border-primary-foreground/20 pt-4">
+            <dt className="font-semibold">Subtotal</dt>
+            <dd aria-live="polite" className="font-display text-4xl font-extrabold tracking-tight text-accent">
+              {formatCedis(cart.subtotalCents)}
+            </dd>
           </div>
         </dl>
         {unavailable > 0 && (
-          <p id="unavailable-note" className="text-sm text-destructive">
+          <p id="unavailable-note" className="rounded-2xl bg-status-disputed px-4 py-3 text-sm font-semibold text-status-disputed-foreground">
             {unavailable === 1 ? '1 item is' : `${unavailable} items are`} no longer available and not
             included in the subtotal. Remove {unavailable === 1 ? 'it' : 'them'} to check out.
           </p>
         )}
         <div className="flex flex-col gap-2">
           {unavailable > 0 ? (
-            <Button disabled aria-describedby="unavailable-note">
+            <Button variant="accent" size="lg" disabled aria-describedby="unavailable-note">
               Proceed to checkout
             </Button>
           ) : (
-            <Link href="/checkout" className={buttonVariants({ className: 'text-base' })}>
+            <Link href="/checkout" className={buttonVariants({ variant: 'accent', size: 'lg' })}>
               Proceed to checkout
             </Link>
           )}
-          <Link href="/products" className={buttonVariants({ variant: 'outline' })}>
+          <Link
+            href="/products"
+            className={buttonVariants({ variant: 'outline', className: 'border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/10' })}
+          >
             Continue shopping
           </Link>
-          <Button variant="ghost" className="text-destructive" onClick={() => setConfirmingClear(true)}>
+          <Button
+            variant="ghost"
+            className="text-primary-foreground underline underline-offset-4 hover:bg-primary-foreground/10"
+            onClick={() => setConfirmingClear(true)}
+          >
             Empty cart
           </Button>
         </div>
-      </Card>
+      </section>
 
       <AlertDialog open={confirmingClear} onOpenChange={setConfirmingClear}>
         <AlertDialogContent>

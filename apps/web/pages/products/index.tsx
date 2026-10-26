@@ -51,8 +51,10 @@ export default function CatalogPage({ initialRegion, session }: CatalogPageProps
 
   return (
     <PublicLayout title="Fresh produce" session={session}>
-      <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Fresh produce near you</h1>
-      <p className="mb-6 mt-1 text-muted-foreground">Bought straight from the farmers who grew it.</p>
+      <div className="mb-8 rounded-[32px] bg-primary px-6 py-8 text-primary-foreground sm:px-10 sm:py-12">
+        <h1 className="text-4xl font-extrabold leading-none sm:text-6xl">Fresh produce near you</h1>
+        <p className="mt-3 text-[17px] text-primary-foreground/80">Bought straight from the farmers who grew it.</p>
+      </div>
       <CatalogView
         region={region}
         filters={filters}

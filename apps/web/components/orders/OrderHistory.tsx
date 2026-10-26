@@ -31,30 +31,31 @@ function Spinner({ label }: { label: string }) {
 
 function OrderRow({ order, onRate }: { order: OrderSummary; onRate: (farmer: OrderFarmer) => void }) {
   return (
-    <li>
+    <li className="overflow-hidden rounded-[28px] border bg-card">
       <Link
         href={`/orders/${order.id}`}
-        className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-4 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-6"
+        className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-5 hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-7"
       >
-        <div className="min-w-0">
-          <p className="font-mono text-sm font-semibold">{order.orderNumber}</p>
+        <div className="min-w-0 space-y-1">
+          <p className="font-mono text-[17px] font-bold">{order.orderNumber}</p>
           <p className="text-sm text-muted-foreground">
             <time dateTime={order.createdAt}>{formatDate(order.createdAt)}</time> · {order.itemCount}{' '}
             {order.itemCount === 1 ? 'item' : 'items'} ·{' '}
             {order.fulfillmentType === 'PICKUP' ? 'Pickup' : 'Delivery'}
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-5">
           <StatusBadge status={order.status} />
-          <span className="whitespace-nowrap font-semibold">{formatCedis(order.finalTotalCents)}</span>
+          <span className="whitespace-nowrap font-display text-[22px] font-bold">{formatCedis(order.finalTotalCents)}</span>
+          <span aria-hidden="true" className="text-xl">›</span>
         </div>
       </Link>
       {order.farmersToRate.length > 0 && (
         // Outside the link: a button can't sit inside one.
-        <div className="flex flex-wrap gap-2 px-4 pb-4 sm:px-6">
+        <div className="flex flex-wrap gap-2 px-5 pb-5 sm:px-7">
           {order.farmersToRate.map((farmer) => (
-            <Button key={farmer.farmerId} variant="outline" size="sm" onClick={() => onRate(farmer)}>
-              <span aria-hidden="true" className="mr-1 text-amber-600">
+            <Button key={farmer.farmerId} variant="accent" size="sm" onClick={() => onRate(farmer)}>
+              <span aria-hidden="true">
                 ★
               </span>
               Rate {farmer.fullName}
@@ -68,7 +69,7 @@ function OrderRow({ order, onRate }: { order: OrderSummary; onRate: (farmer: Ord
 
 function EmptyOrders() {
   return (
-    <Card className="flex flex-col items-center gap-4 px-6 py-14 text-center">
+    <Card className="flex flex-col items-center gap-4 border-dashed px-6 py-14 text-center">
       <svg aria-hidden="true" viewBox="0 0 64 64" className="h-16 w-16 text-muted-foreground">
         <path
           d="M18 10h28l6 8v36H12V18l6-8zm-6 8h40M24 30h16M24 40h10"
@@ -79,8 +80,8 @@ function EmptyOrders() {
           strokeLinejoin="round"
         />
       </svg>
-      <h2 className="text-xl font-semibold">No orders yet</h2>
-      <p className="max-w-sm text-sm text-muted-foreground">
+      <h2 className="text-[28px] font-extrabold">No orders yet</h2>
+      <p className="max-w-sm text-[15px] text-muted-foreground">
         When you place an order, you&apos;ll be able to follow it here.
       </p>
       <Link href="/products" className={buttonVariants()}>
@@ -128,16 +129,16 @@ export function OrderHistory() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-[15px] text-muted-foreground">
         {total} {total === 1 ? 'order' : 'orders'}
       </p>
-      <Card className="overflow-hidden">
-        <ul className="divide-y" aria-label="Your orders">
+      <div>
+        <ul className="space-y-4" aria-label="Your orders">
           {orders.map((order) => (
             <OrderRow key={order.id} order={order} onRate={(farmer) => setRating({ orderId: order.id, farmer })} />
           ))}
         </ul>
-      </Card>
+      </div>
       <div ref={sentinel} />
       {loadingMore && <Spinner label="Loading more orders…" />}
       {hasMore && !loadingMore && (

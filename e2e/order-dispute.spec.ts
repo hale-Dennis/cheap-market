@@ -46,7 +46,8 @@ test.describe('Reporting an issue with an order', () => {
     return order;
   }
 
-  const status = (page: Page) => page.getByText('Status', { exact: true }).locator('xpath=following-sibling::dd');
+  // The current step of the order's status track.
+  const status = (page: Page) => page.getByRole('list', { name: 'Order progress' }).locator('[aria-current="step"]');
 
   test('a buyer reports an issue: the order becomes Disputed and the admin is notified', async ({ page, browser }) => {
     const buyerName = `Dispute Buyer ${id}`;
@@ -54,7 +55,7 @@ test.describe('Reporting an issue with an order', () => {
     const order = await placeOrder(page, 'COMPLETED');
 
     await page.goto(`/orders/${order.orderId}`);
-    await expect(status(page)).toHaveText('Completed');
+    await expect(status(page)).toContainText('Completed');
     await page.getByRole('button', { name: 'Report issue' }).click();
     const dialog = page.getByRole('dialog', { name: 'Report an issue' });
     await expect(dialog.getByRole('button', { name: 'Submit report' })).toBeDisabled();
@@ -63,7 +64,7 @@ test.describe('Reporting an issue with an order', () => {
     await dialog.getByRole('button', { name: 'Submit report' }).click();
 
     await expect(page.getByText("Thanks for letting us know. We'll review the issue and get back to you.")).toBeVisible();
-    await expect(status(page)).toHaveText('Disputed');
+    await expect(status(page)).toContainText('Disputed');
     await expect(page.getByRole('region', { name: 'Issue reported' })).toContainText('Two of the shea butter tubs were cracked and leaking.');
     await expect(page.getByRole('button', { name: 'Report issue' })).toHaveCount(0);
     // The farmer can still be rated.
@@ -110,7 +111,7 @@ test.describe('Reporting an issue with an order', () => {
     const order = await placeOrder(page, 'OUT_FOR_DELIVERY');
 
     await page.goto(`/orders/${order.orderId}`);
-    await expect(status(page)).toHaveText('Out for Delivery');
+    await expect(status(page)).toContainText('Out for Delivery');
     await expect(page.getByRole('button', { name: 'Report issue' })).toHaveCount(0);
 
     const response = await page.request.post('/api/v1/disputes', { data: { orderId: order.orderId, reason: 'Late' } });

@@ -54,12 +54,12 @@ export function BuyerProfileForm({ profile, onSaved }: BuyerProfileFormProps) {
       <FormError message={errors.root?.message} />
 
       <section aria-labelledby="details-heading" className="space-y-4">
-        <h2 id="details-heading" className="text-lg font-semibold">
+        <h2 id="details-heading" className="text-2xl font-bold">
           Your details
         </h2>
         <div className="space-y-2">
-          <p className="text-sm font-medium leading-none">Email</p>
-          <p className="text-sm text-muted-foreground">{profile.email}</p>
+          <p className="text-[15px] font-bold leading-none">Email</p>
+          <p className="text-[15px] text-muted-foreground">{profile.email}</p>
         </div>
         <Field id="fullName" label="Full name" error={errors.fullName?.message}>
           <Input
@@ -95,8 +95,8 @@ export function BuyerProfileForm({ profile, onSaved }: BuyerProfileFormProps) {
       </section>
 
       <fieldset className="space-y-4">
-        <legend className="text-lg font-semibold">Delivery address</legend>
-        <p className="text-sm text-muted-foreground">
+        <legend className="font-display text-2xl font-bold">Delivery address</legend>
+        <p className="text-[15px] text-muted-foreground">
           Used when you choose home delivery at checkout. Leave all fields empty if you&apos;ll
           only use pickup points.
         </p>

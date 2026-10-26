@@ -150,7 +150,7 @@ describe('Reporting an issue from the order page', () => {
     const issue = await screen.findByRole('region', { name: 'Issue reported' });
     expect(issue).toHaveTextContent('Half the tomatoes were rotten.');
     expect(issue).toHaveTextContent("We've received your report and will review it soon.");
-    expect(screen.getByText('Status').nextElementSibling).toHaveTextContent('Disputed');
+    expect(screen.getByRole('list', { name: 'Order progress' }).querySelector('[aria-current="step"]')).toHaveTextContent('Disputed');
     expect(screen.queryByRole('button', { name: 'Report issue' })).not.toBeInTheDocument();
     // The farmer can still be rated on a disputed order.
     expect(screen.getByRole('button', { name: 'Rate Ama Mensah' })).toBeInTheDocument();

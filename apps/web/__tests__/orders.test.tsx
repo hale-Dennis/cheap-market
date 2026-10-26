@@ -61,7 +61,7 @@ describe('OrderConfirmation', () => {
 
     expect(await screen.findByRole('heading', { name: 'Thank you! Your order is placed.' })).toBeInTheDocument();
     expect(screen.getByText('CM-7K3F9Q2X')).toBeInTheDocument();
-    expect(screen.getByText('Status').nextElementSibling).toHaveTextContent('Pending');
+    expect(screen.getByRole('list', { name: 'Order progress' }).querySelector('[aria-current="step"]')).toHaveTextContent('Pending');
     expect(screen.getByText('Payment').nextElementSibling).toHaveTextContent('Pay when you receive it');
     expect(screen.getByText('12 Ring Rd, Ho')).toBeInTheDocument();
     const items = screen.getByRole('region', { name: 'Items' });

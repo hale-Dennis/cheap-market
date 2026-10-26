@@ -32,10 +32,10 @@ export function QuantityStepper({ itemName, value, onChange, disabled }: Quantit
   }
 
   const button =
-    'flex h-9 w-9 items-center justify-center text-lg hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring';
+    'flex h-11 w-11 items-center justify-center rounded-full bg-card text-xl font-bold text-primary hover:bg-border disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
   return (
-    <div className="inline-flex items-center rounded-md border border-input bg-background">
+    <div className="inline-flex items-center gap-0.5 rounded-full bg-muted p-1">
       <button
         type="button"
         className={button}
@@ -56,7 +56,7 @@ export function QuantityStepper({ itemName, value, onChange, disabled }: Quantit
         onKeyDown={handleKeyDown}
         disabled={disabled}
         aria-label={`Quantity of ${itemName}`}
-        className="h-9 w-12 border-x border-input bg-transparent text-center text-sm [appearance:textfield] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        className="h-11 w-14 bg-transparent text-center text-base font-bold [appearance:textfield] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
       <button
         type="button"

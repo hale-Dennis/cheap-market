@@ -67,8 +67,8 @@ export function CheckoutView() {
   if (unavailable.length > 0) {
     return (
       <Card className="space-y-3 p-6">
-        <h2 className="text-lg font-semibold">Some items are no longer available</h2>
-        <p className="text-sm text-muted-foreground">
+        <h2 className="text-2xl font-bold">Some items are no longer available</h2>
+        <p className="text-[15px] text-muted-foreground">
           Remove {unavailable.map((item) => item.name).join(', ')} from your cart to continue.
         </p>
         <Link href="/cart" className={buttonVariants({ variant: 'outline' })}>
@@ -117,8 +117,8 @@ export function CheckoutView() {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="grid gap-6 lg:grid-cols-[1fr_22rem]">
-      <Card className="h-fit p-6">
+    <form onSubmit={handleSubmit} noValidate className="grid gap-7 lg:grid-cols-[1fr_24rem]">
+      <Card className="h-fit p-7">
         <FulfillmentSelector
           selection={selection}
           onChange={handleChange}
@@ -130,15 +130,15 @@ export function CheckoutView() {
         />
       </Card>
 
-      <Card className="h-fit space-y-4 p-6">
+      <div className="h-fit space-y-5 rounded-[32px] bg-primary p-7 text-primary-foreground">
         <CheckoutSummary cart={cart.data} fulfillment={selection.type} totals={totals} />
-        <Button type="submit" className="w-full text-base" disabled={submitting}>
+        <Button type="submit" variant="accent" size="lg" className="w-full" disabled={submitting}>
           {submitting ? 'Placing order…' : 'Place order'}
         </Button>
-        <Link href="/cart" className="block text-center text-sm text-muted-foreground hover:text-foreground">
+        <Link href="/cart" className="flex min-h-11 items-center justify-center text-sm font-semibold underline-offset-4 hover:underline">
           Back to cart
         </Link>
-      </Card>
+      </div>
     </form>
   );
 }

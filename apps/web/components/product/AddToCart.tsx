@@ -31,7 +31,7 @@ export function AddToCart({ productId, productName, unit, viewerRole }: AddToCar
     const next = encodeURIComponent(`/products/${productId}`);
     return (
       <div className="space-y-2">
-        <Link href={`/login?next=${next}`} className={buttonVariants({ size: 'default', className: 'w-full text-base' })}>
+        <Link href={`/login?next=${next}`} className={buttonVariants({ size: 'lg', className: 'w-full' })}>
           Sign in to add to cart
         </Link>
         <p className="text-center text-sm text-muted-foreground">
@@ -46,7 +46,7 @@ export function AddToCart({ productId, productName, unit, viewerRole }: AddToCar
 
   if (viewerRole !== 'BUYER') {
     return (
-      <p className="rounded-md border bg-muted px-3 py-2 text-sm text-muted-foreground">
+      <p className="rounded-2xl bg-muted px-4 py-3 text-[15px] text-muted-foreground">
         Only buyer accounts can add produce to a cart.
       </p>
     );
@@ -80,8 +80,8 @@ export function AddToCart({ productId, productName, unit, viewerRole }: AddToCar
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-3">
-      <div className="flex items-end gap-3">
-        <div className="w-24 space-y-2">
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="w-28 space-y-2">
           <Label htmlFor="quantity">Quantity</Label>
           <Input
             id="quantity"
@@ -93,14 +93,15 @@ export function AddToCart({ productId, productName, unit, viewerRole }: AddToCar
             onChange={(event) => setQuantity(event.target.value)}
             aria-invalid={Boolean(error) && !valid}
             aria-describedby={error ? 'add-to-cart-error' : undefined}
+            className="h-14 text-center text-base font-bold"
           />
         </div>
-        <Button type="submit" className="h-10 flex-1 text-base" disabled={adding}>
+        <Button type="submit" size="lg" className="min-w-[200px] flex-1" disabled={adding}>
           {adding ? 'Adding…' : 'Add to cart'}
         </Button>
       </div>
       {error && (
-        <p id="add-to-cart-error" role="alert" className="text-sm text-destructive">
+        <p id="add-to-cart-error" role="alert" className="text-sm font-semibold text-destructive">
           {error}
         </p>
       )}

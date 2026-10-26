@@ -11,7 +11,10 @@ interface OrdersPageProps {
 export default function OrdersPage({ session }: OrdersPageProps) {
   return (
     <PublicLayout title="My orders" session={session}>
-      <h1 className="mb-4 text-2xl font-bold tracking-tight sm:text-3xl">My orders</h1>
+      <div className="mb-8 space-y-2">
+        <h1 className="text-[40px] font-extrabold leading-none sm:text-6xl">My orders</h1>
+        <p className="text-[17px] text-muted-foreground">Track deliveries, rate farmers and report problems.</p>
+      </div>
       <OrderHistory />
     </PublicLayout>
   );
