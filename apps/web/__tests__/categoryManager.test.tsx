@@ -48,11 +48,12 @@ describe('CategoryManager', () => {
     mocked.list.mockResolvedValue([FRUITS, VEGETABLES]);
     renderManager();
 
-    const rows = await screen.findAllByRole('row');
-    expect(rows).toHaveLength(3);
-    expect(within(rows[1]).getByText('Fruits')).toBeInTheDocument();
-    expect(within(rows[1]).getByRole('button', { name: 'Rename Fruits' })).toBeInTheDocument();
-    expect(within(rows[1]).getByRole('button', { name: 'Delete Fruits' })).toBeInTheDocument();
+    const list = await screen.findByRole('list', { name: 'Produce categories (2)' });
+    const cards = within(list).getAllByRole('listitem');
+    expect(cards).toHaveLength(2);
+    expect(within(cards[0]).getByRole('heading', { name: 'Fruits' })).toBeInTheDocument();
+    expect(within(cards[0]).getByRole('button', { name: 'Rename Fruits' })).toBeInTheDocument();
+    expect(within(cards[0]).getByRole('button', { name: 'Delete Fruits' })).toBeInTheDocument();
   });
 
   it('shows an empty state when there are no categories', async () => {

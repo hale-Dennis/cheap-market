@@ -71,15 +71,15 @@ export function ImagePicker({ id, files, onChange, onReject, describedBy, invali
               <img
                 src={previews[index]}
                 alt={`Preview of ${file.name}`}
-                className="aspect-square w-full rounded-md border object-cover"
+                className="aspect-square w-full rounded-[18px] object-cover"
               />
               <div className="flex items-center justify-between gap-1 text-xs">
                 <span className="truncate text-muted-foreground">
-                  {index === 0 ? 'Main photo' : file.name}
+                  {index === 0 ? <span className="rounded-full bg-primary px-2 py-0.5 font-bold text-accent">Main photo</span> : file.name}
                 </span>
                 <button
                   type="button"
-                  className="shrink-0 font-medium text-destructive hover:underline"
+                  className="min-h-8 shrink-0 font-semibold text-destructive hover:underline"
                   onClick={() => onChange(files.filter((_, i) => i !== index))}
                   aria-label={`Remove ${file.name}`}
                 >

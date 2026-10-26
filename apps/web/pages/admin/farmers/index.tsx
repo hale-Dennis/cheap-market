@@ -30,9 +30,13 @@ export default function FarmersPage({ email: adminEmail }: SessionPageProps) {
 
   return (
     <AdminLayout title="Farmers" adminEmail={adminEmail}>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-tight">Farmers</h1>
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-[40px] font-extrabold leading-none sm:text-[52px]">Farmers</h1>
+          <p className="text-base text-muted-foreground">Everyone our agents have registered to sell.</p>
+        </div>
         <Link href="/admin/farmers/create" className={buttonVariants()}>
+          <span aria-hidden="true" className="text-lg leading-none text-accent">+</span>
           Create farmer
         </Link>
       </div>

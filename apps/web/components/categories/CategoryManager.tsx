@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import type { Category } from '@cheap-market/shared-types';
 
-import { CategoriesTable } from '@/components/categories/CategoriesTable';
+import { CategoryGrid } from '@/components/categories/CategoryGrid';
 import { CategoryFormDialog } from '@/components/categories/CategoryFormDialog';
 import { DeleteCategoryDialog } from '@/components/categories/DeleteCategoryDialog';
 import { Button } from '@/components/ui/button';
@@ -24,43 +24,44 @@ export function CategoryManager() {
 
   return (
     <>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Categories</h1>
-          <p className="mt-1 text-muted-foreground">Group produce so buyers can browse it.</p>
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-[40px] font-extrabold leading-none sm:text-[52px]">Categories</h1>
+          <p className="text-base text-muted-foreground">Group produce so buyers can browse it.</p>
         </div>
-        <Button onClick={openAdd}>Add category</Button>
+        <Button onClick={openAdd}>
+          <span aria-hidden="true" className="text-lg leading-none text-accent">+</span>
+          Add category
+        </Button>
       </div>
 
       {error && !categories && (
         <Card className="p-6">
-          <p role="alert" className="text-sm text-destructive">
+          <p role="alert" className="text-[15px] font-semibold text-destructive">
             {error instanceof ApiError ? error.message : 'Could not load categories.'}
           </p>
         </Card>
       )}
       {!error && !categories && (
         <Card className="p-6">
-          <p className="text-sm text-muted-foreground">Loading categories…</p>
+          <p className="text-[15px] text-muted-foreground">Loading categories…</p>
         </Card>
       )}
       {categories?.length === 0 && (
-        <Card className="flex flex-col items-center gap-3 px-6 py-12 text-center">
-          <h2 className="text-lg font-semibold">No categories yet</h2>
-          <p className="max-w-sm text-sm text-muted-foreground">
+        <Card className="flex flex-col items-center gap-3 border-dashed px-6 py-14 text-center">
+          <h2 className="text-[28px] font-extrabold">No categories yet</h2>
+          <p className="max-w-sm text-[15px] text-muted-foreground">
             Add categories such as Vegetables, Fruits and Grains before listing produce.
           </p>
           <Button onClick={openAdd}>Add category</Button>
         </Card>
       )}
       {categories && categories.length > 0 && (
-        <Card className="overflow-hidden">
-          <CategoriesTable
-            categories={categories}
-            onEdit={(category) => setForm({ mode: 'edit', category })}
-            onDelete={setToDelete}
-          />
-        </Card>
+        <CategoryGrid
+          categories={categories}
+          onEdit={(category) => setForm({ mode: 'edit', category })}
+          onDelete={setToDelete}
+        />
       )}
 
       <CategoryFormDialog
