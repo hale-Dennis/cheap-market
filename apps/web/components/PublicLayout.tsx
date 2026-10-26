@@ -1,17 +1,10 @@
 import Head from 'next/head';
-import Link from 'next/link';
 import type { ReactNode } from 'react';
-import type { UserRole } from '@cheap-market/shared-types';
 
-import { CartLink } from '@/components/cart/CartLink';
-import { SignOutButton } from '@/components/SignOutButton';
-import { buttonVariants } from '@/components/ui/button';
-import { homeForRole } from '@/lib/roles';
+import { SiteFooter } from '@/components/layout/SiteFooter';
+import { SiteHeader, type SiteSession } from '@/components/layout/SiteHeader';
 
-export interface PublicSession {
-  email: string;
-  role: UserRole;
-}
+export type PublicSession = SiteSession;
 
 interface PublicLayoutProps {
   title: string;
@@ -26,49 +19,10 @@ export function PublicLayout({ title, session, children }: PublicLayoutProps) {
       <Head>
         <title>{`${title} · Cheap Market`}</title>
       </Head>
-      <div className="min-h-screen bg-muted">
-        <header className="border-b bg-background">
-          {/* Wraps onto two rows on narrow phones rather than overflowing sideways. */}
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
-            <div className="flex items-center gap-4 sm:gap-6">
-              <Link href="/" className="whitespace-nowrap font-semibold text-primary">
-                Cheap Market
-              </Link>
-              <Link href="/products" className="text-sm text-muted-foreground hover:text-foreground">
-                Produce
-              </Link>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-3">
-              {session ? (
-                <>
-                  {session.role === 'BUYER' && <CartLink />}
-                  {session.role === 'BUYER' && (
-                    <Link href="/orders" className="whitespace-nowrap text-sm text-muted-foreground hover:text-foreground">
-                      My orders
-                    </Link>
-                  )}
-                  <Link
-                    href={homeForRole(session.role)}
-                    className="text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    {session.role === 'ADMIN' ? 'Admin' : 'My account'}
-                  </Link>
-                  <SignOutButton redirectTo="/products" />
-                </>
-              ) : (
-                <>
-                  <Link href="/login" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-                    Sign in
-                  </Link>
-                  <Link href="/signup" className={buttonVariants({ size: 'sm' })}>
-                    Sign up
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        </header>
-        <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
+      <div className="min-h-screen">
+        <SiteHeader session={session} signOutTo="/products" />
+        <main className="mx-auto max-w-[1320px] px-4 py-8 sm:px-6">{children}</main>
+        <SiteFooter />
       </div>
     </>
   );
