@@ -22,7 +22,7 @@ export function Field({ id, label, hint, error, children }: FieldProps) {
         </p>
       )}
       {error && (
-        <p id={`${id}-error`} className="text-sm text-destructive">
+        <p id={`${id}-error`} className="text-sm font-semibold text-destructive">
           {error}
         </p>
       )}
@@ -42,7 +42,7 @@ export function FormError({ message }: { message?: string }) {
   return (
     <div
       role="alert"
-      className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+      className="rounded-2xl bg-status-disputed px-4 py-3 text-[15px] font-semibold text-status-disputed-foreground"
     >
       {message}
     </div>
