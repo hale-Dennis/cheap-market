@@ -29,9 +29,9 @@ interface CatalogViewProps {
 export function CatalogView({ region, filters, onRegionChange, onFiltersChange, hrefForPage }: CatalogViewProps) {
   if (!region) {
     return (
-      <Card className="mx-auto max-w-lg p-6">
-        <h2 className="text-lg font-semibold">Where are you shopping?</h2>
-        <p className="mb-4 mt-1 text-sm text-muted-foreground">
+      <Card className="mx-auto max-w-xl p-7">
+        <h2 className="text-2xl font-bold">Where are you shopping?</h2>
+        <p className="mb-5 mt-1 text-[15px] text-muted-foreground">
           We show produce from farmers in your region so it reaches you fresh.
         </p>
         <RegionPicker submitLabel="Show produce" onSelect={onRegionChange} />
@@ -73,7 +73,7 @@ function RegionCatalog({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-lg border bg-background p-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 rounded-[28px] border bg-card p-5 sm:flex-row sm:items-end sm:justify-between">
         {changingRegion ? (
           <div className="flex-1">
             <RegionPicker
@@ -87,10 +87,12 @@ function RegionCatalog({
             />
           </div>
         ) : (
-          <p className="text-sm">
-            Showing produce from farmers in{' '}
-            <span className="font-semibold">{regionName(region)}</span>{' '}
-            <Button variant="ghost" size="sm" onClick={() => setChangingRegion(true)} className="ml-1 h-auto px-2 py-1 text-primary">
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px]">
+            <span>
+              Showing produce from farmers in{' '}
+              <span className="rounded-full bg-muted px-3 py-1 font-bold">{regionName(region)}</span>
+            </span>
+            <Button variant="ghost" size="sm" onClick={() => setChangingRegion(true)} className="underline underline-offset-4">
               Change region
             </Button>
           </p>
@@ -114,20 +116,20 @@ function RegionCatalog({
 
       {error && !data && (
         <Card className="p-6">
-          <p role="alert" className="text-sm text-destructive">
+          <p role="alert" className="text-[15px] font-semibold text-destructive">
             {error instanceof ApiError ? error.message : 'Could not load produce.'}
           </p>
         </Card>
       )}
       {(isLoading || outOfRange) && !error && (
-        <p className="text-sm text-muted-foreground">Loading produce…</p>
+        <p className="text-[15px] text-muted-foreground">Loading produce…</p>
       )}
       {data && !outOfRange && data.totalElements === 0 && (
-        <Card className="flex flex-col items-center gap-3 px-6 py-12 text-center">
-          <h2 className="text-lg font-semibold">
+        <Card className="flex flex-col items-center gap-3 border-dashed px-6 py-14 text-center">
+          <h2 className="text-2xl font-extrabold">
             {categoryName ? `No ${categoryName} in ${regionName(region)} right now` : `No produce in ${regionName(region)} yet`}
           </h2>
-          <p className="max-w-sm text-sm text-muted-foreground">
+          <p className="max-w-sm text-[15px] text-muted-foreground">
             Farmers add new harvests regularly, so check back soon
             {categoryName ? ' or browse every category' : ' or look in a nearby region'}.
           </p>
@@ -140,7 +142,7 @@ function RegionCatalog({
       )}
       {data && !outOfRange && data.totalElements > 0 && (
         <section aria-label="Produce" aria-busy={isValidating}>
-          <ul className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <ul className="grid grid-cols-1 gap-5 min-[480px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
             {data.content.map((product) => (
               <li key={product.id}>
                 <ProductCard product={product} />
@@ -148,7 +150,7 @@ function RegionCatalog({
             ))}
           </ul>
           {data.totalPages > 1 && (
-            <div className="mt-6 overflow-hidden rounded-lg border bg-background">
+            <div className="mt-6">
               <Pagination
                 currentPage={data.currentPage}
                 totalPages={data.totalPages}

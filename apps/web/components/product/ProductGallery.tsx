@@ -20,7 +20,7 @@ export function ProductGallery({ name, imageUrls }: ProductGalleryProps) {
       <img
         src={PLACEHOLDER_IMAGE}
         alt={`No photo of ${name}`}
-        className="aspect-square w-full rounded-lg border bg-muted object-cover"
+        className="aspect-square w-full rounded-[36px] bg-muted object-cover"
       />
     );
   }
@@ -43,7 +43,7 @@ export function ProductGallery({ name, imageUrls }: ProductGalleryProps) {
           srcSet={imageSrcSet(current, [400, 800, 1200])}
           sizes="(min-width: 768px) 50vw, 100vw"
           alt={count > 1 ? `${name}, photo ${index + 1} of ${count}` : name}
-          className="aspect-square w-full rounded-lg border bg-muted object-cover"
+          className="aspect-square w-full rounded-[36px] bg-muted object-cover"
         />
         {count > 1 && (
           <>
@@ -51,7 +51,7 @@ export function ProductGallery({ name, imageUrls }: ProductGalleryProps) {
               type="button"
               onClick={() => show(index - 1)}
               aria-label="Previous photo"
-              className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-background/90 text-lg shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="absolute left-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-card/95 text-2xl text-primary shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <span aria-hidden="true">‹</span>
             </button>
@@ -59,7 +59,7 @@ export function ProductGallery({ name, imageUrls }: ProductGalleryProps) {
               type="button"
               onClick={() => show(index + 1)}
               aria-label="Next photo"
-              className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-background/90 text-lg shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="absolute right-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-card/95 text-2xl text-primary shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <span aria-hidden="true">›</span>
             </button>
@@ -67,7 +67,7 @@ export function ProductGallery({ name, imageUrls }: ProductGalleryProps) {
         )}
       </div>
       {count > 1 && (
-        <ul className="mt-3 grid grid-cols-5 gap-2" aria-label="Choose a photo">
+        <ul className="mt-4 grid grid-cols-5 gap-3" aria-label="Choose a photo">
           {imageUrls.map((url, i) => (
             <li key={`${url}-${i}`}>
               <button
@@ -76,7 +76,7 @@ export function ProductGallery({ name, imageUrls }: ProductGalleryProps) {
                 aria-label={`Show photo ${i + 1} of ${count}`}
                 aria-current={i === index ? 'true' : undefined}
                 className={cn(
-                  'block w-full overflow-hidden rounded-md border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  'block w-full overflow-hidden rounded-[18px] border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   i === index ? 'border-primary' : 'border-transparent opacity-80 hover:opacity-100',
                 )}
               >

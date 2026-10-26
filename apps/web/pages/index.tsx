@@ -1,33 +1,37 @@
-import Head from 'next/head';
-import Link from 'next/link';
+import type { GetServerSideProps } from 'next';
+import type { RegionCode } from '@cheap-market/shared-types';
 
-import { buttonVariants } from '@/components/ui/button';
+import { CtaBand, ForFarmers, FreshThisWeek, Hero, HowItWorks, ShopByCategory } from '@/components/home/HomeSections';
+import { PublicLayout, type PublicSession } from '@/components/PublicLayout';
+import { ACCESS_TOKEN_COOKIE, verifyAccessToken } from '@/lib/auth';
+import { REGION_COOKIE, parseRegion } from '@/lib/region';
 
-const HomePage = () => {
+/** Shown in "Fresh this week" until the visitor picks a region in the catalog. */
+export const DEFAULT_HOME_REGION: RegionCode = 'GREATER_ACCRA';
+
+interface HomePageProps {
+  region: RegionCode;
+  session: PublicSession | null;
+}
+
+export default function HomePage({ region, session }: HomePageProps) {
   return (
-    <>
-      <Head>
-        <title>Cheap Market</title>
-      </Head>
-      <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-muted px-4 text-center">
-        <h1 className="text-4xl font-bold tracking-tight">Welcome</h1>
-        <p className="max-w-md text-muted-foreground">
-          Fresh produce straight from Ghanaian farmers, at fair prices.
-        </p>
-        <div className="flex flex-wrap justify-center gap-3">
-          <Link href="/products" className={buttonVariants()}>
-            Browse produce
-          </Link>
-          <Link href="/signup" className={buttonVariants({ variant: 'outline' })}>
-            Create an account
-          </Link>
-          <Link href="/login" className={buttonVariants({ variant: 'ghost' })}>
-            Sign in
-          </Link>
-        </div>
-      </main>
-    </>
+    <PublicLayout title="Fresh produce from Ghanaian farmers" session={session}>
+      <div className="space-y-20 sm:space-y-24">
+        <Hero />
+        <ShopByCategory />
+        <FreshThisWeek region={region} />
+        <HowItWorks />
+        <ForFarmers />
+        <CtaBand />
+      </div>
+    </PublicLayout>
   );
-};
+}
 
-export default HomePage;
+export const getServerSideProps: GetServerSideProps<HomePageProps> = async ({ req }) => {
+  const claims = await verifyAccessToken(req.cookies[ACCESS_TOKEN_COOKIE]);
+  const session = claims ? { email: claims.sub, role: claims.role } : null;
+  const region = parseRegion(req.cookies[REGION_COOKIE]) ?? DEFAULT_HOME_REGION;
+  return { props: { region, session } };
+};

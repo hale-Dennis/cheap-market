@@ -11,7 +11,7 @@ interface CartPageProps {
 export default function CartPage({ session }: CartPageProps) {
   return (
     <PublicLayout title="Your cart" session={session}>
-      <h1 className="mb-6 text-2xl font-bold tracking-tight sm:text-3xl">Your cart</h1>
+      <h1 className="mb-8 text-[40px] font-extrabold leading-none sm:text-6xl">Your cart</h1>
       <CartView />
     </PublicLayout>
   );

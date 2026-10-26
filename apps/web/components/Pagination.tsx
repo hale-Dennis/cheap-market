@@ -31,17 +31,17 @@ export function Pagination({
   const last = Math.min((currentPage + 1) * pageSize, totalElements);
   const hasPrevious = currentPage > 0;
   const hasNext = currentPage < totalPages - 1;
-  const linkClass = buttonVariants({ variant: 'outline', size: 'sm' });
+  const linkClass = cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'bg-card');
   const disabledClass = cn(linkClass, 'pointer-events-none opacity-50');
 
   return (
     <nav
       aria-label="Pagination"
-      className="flex flex-col items-center justify-between gap-3 border-t px-4 py-3 text-sm sm:flex-row"
+      className="flex flex-col items-center justify-between gap-3 px-1 py-3 text-[15px] sm:flex-row"
     >
       <p className="text-muted-foreground">
-        Showing <span className="font-medium text-foreground">{first}–{last}</span> of{' '}
-        <span className="font-medium text-foreground">{totalElements}</span> {itemLabel}
+        Showing <span className="font-semibold text-foreground">{first}–{last}</span> of{' '}
+        <span className="font-semibold text-foreground">{totalElements}</span> {itemLabel}
       </p>
       <div className="flex items-center gap-3">
         {hasPrevious ? (
@@ -53,7 +53,7 @@ export function Pagination({
             Previous
           </span>
         )}
-        <span aria-current="page">
+        <span aria-current="page" className="rounded-full bg-primary px-4 py-2.5 font-bold text-primary-foreground">
           Page {currentPage + 1} of {totalPages}
         </span>
         {hasNext ? (

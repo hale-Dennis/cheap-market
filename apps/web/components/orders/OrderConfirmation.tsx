@@ -3,7 +3,8 @@ import { useState } from 'react';
 import type { Address, Dispute, DisputeStatus, OrderDetail, OrderFarmer } from '@cheap-market/shared-types';
 
 import { DisputeFormModal } from '@/components/disputes/DisputeFormModal';
-import { StatusBadge } from '@/components/orders/StatusBadge';
+import { CheckoutSteps } from '@/components/checkout/CheckoutSteps';
+import { StatusTrack } from '@/components/orders/StatusTrack';
 import { RateFarmerModal } from '@/components/ratings/RateFarmerModal';
 import { Stars } from '@/components/ratings/Stars';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -49,15 +50,15 @@ function FarmerRatings({ order, onRated }: { order: OrderDetail; onRated: () => 
   const [rating, setRating] = useState<OrderFarmer | null>(null);
 
   return (
-    <section aria-labelledby="farmers-heading" className="border-t pt-4">
-      <h2 id="farmers-heading" className="mb-1 text-lg font-semibold">
+    <section aria-labelledby="farmers-heading" className="border-t pt-6">
+      <h2 id="farmers-heading" className="mb-1 text-2xl font-bold">
         Rate your {order.farmers.length === 1 ? 'farmer' : 'farmers'}
       </h2>
-      <p className="mb-3 text-sm text-muted-foreground">Your rating helps other buyers and the farmers themselves.</p>
+      <p className="mb-4 text-[15px] text-muted-foreground">Your rating helps other buyers and the farmers themselves.</p>
       <ul className="space-y-3">
         {order.farmers.map((farmer) => (
-          <li key={farmer.farmerId} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-            <span className="font-medium">{farmer.fullName}</span>
+          <li key={farmer.farmerId} className="flex flex-wrap items-center justify-between gap-3 rounded-[22px] bg-background p-4 text-[15px]">
+            <span className="text-[17px] font-bold">{farmer.fullName}</span>
             {farmer.rating ? (
               <span className="flex flex-col items-end">
                 <span className="flex items-center gap-2">
@@ -69,8 +70,8 @@ function FarmerRatings({ order, onRated }: { order: OrderDetail; onRated: () => 
                 )}
               </span>
             ) : (
-              <Button variant="outline" size="sm" onClick={() => setRating(farmer)}>
-                <span aria-hidden="true" className="mr-1 text-amber-600">
+              <Button variant="accent" size="sm" onClick={() => setRating(farmer)}>
+                <span aria-hidden="true">
                   ★
                 </span>
                 Rate {farmer.fullName}
@@ -93,14 +94,14 @@ const DISPUTE_STATUS_TEXT: Record<DisputeStatus, string> = {
 /** The issue the buyer reported on this order. */
 function ReportedIssue({ dispute }: { dispute: Dispute }) {
   return (
-    <section aria-labelledby="issue-heading" className="border-t pt-4">
-      <h2 id="issue-heading" className="mb-1 text-lg font-semibold">
+    <section aria-labelledby="issue-heading" className="rounded-[28px] bg-status-disputed p-6 text-status-disputed-foreground">
+      <h2 id="issue-heading" className="mb-1 font-sans text-lg font-bold">
         Issue reported
       </h2>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm">
         {formatPlacedAt(dispute.createdAt)} · {DISPUTE_STATUS_TEXT[dispute.status]}
       </p>
-      <p className="mt-2 whitespace-pre-line break-words rounded-md bg-muted p-3 text-sm">{dispute.reason}</p>
+      <p className="mt-3 whitespace-pre-line break-words rounded-2xl bg-card/80 p-4 text-[15px] text-foreground">{dispute.reason}</p>
     </section>
   );
 }
@@ -110,11 +111,11 @@ function ReportIssue({ order, onReported }: { order: OrderDetail; onReported: ()
   const [open, setOpen] = useState(false);
 
   return (
-    <section aria-labelledby="report-heading" className="border-t pt-4">
-      <h2 id="report-heading" className="mb-1 text-lg font-semibold">
+    <section aria-labelledby="report-heading" className="rounded-[28px] bg-muted p-6">
+      <h2 id="report-heading" className="mb-1 font-sans text-lg font-bold">
         Problem with this order?
       </h2>
-      <p className="mb-3 text-sm text-muted-foreground">
+      <p className="mb-4 text-[15px] text-muted-foreground">
         If something was missing, wrong or not good enough, let us know and we&apos;ll sort it out.
       </p>
       <Button variant="outline" onClick={() => setOpen(true)}>
@@ -143,7 +144,7 @@ export function OrderConfirmation({ orderId, variant = 'confirmation' }: OrderCo
   if (!orderId || (error instanceof ApiError && (error.status === 404 || error.status === 400))) {
     return (
       <Card className="flex flex-col items-center gap-3 px-6 py-12 text-center">
-        <h1 className="text-xl font-semibold">We couldn&apos;t find that order</h1>
+        <h1 className="text-[28px] font-extrabold">We couldn&apos;t find that order</h1>
         <Link href="/products" className={buttonVariants()}>
           Browse produce
         </Link>
@@ -162,58 +163,62 @@ export function OrderConfirmation({ orderId, variant = 'confirmation' }: OrderCo
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
       {variant === 'confirmation' ? (
-        <div className="text-center">
-          <p aria-hidden="true" className="text-4xl">✓</p>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Thank you! Your order is placed.</h1>
-          <p className="mt-2 text-muted-foreground">
-            Order number <span className="font-mono font-semibold text-foreground">{order.orderNumber}</span>
-          </p>
+        <div className="space-y-6">
+          <CheckoutSteps current={3} />
+          <div className="flex flex-wrap items-center gap-6 rounded-[36px] bg-primary p-7 text-primary-foreground sm:p-12">
+            <span aria-hidden="true" className="flex h-[72px] w-[72px] items-center justify-center rounded-3xl bg-accent text-4xl font-bold text-accent-foreground">
+              ✓
+            </span>
+            <div className="min-w-0 flex-1 space-y-3">
+              <h1 className="text-[40px] font-extrabold leading-none sm:text-6xl">Thank you! Your order is placed.</h1>
+              <p className="text-[17px] text-primary-foreground/80">
+                Order number <span className="font-mono font-bold text-primary-foreground">{order.orderNumber}</span>
+              </p>
+            </div>
+          </div>
         </div>
       ) : (
-        <div>
-          <Link href="/orders" className="text-sm text-muted-foreground hover:text-foreground">
+        <div className="space-y-3">
+          <Link href="/orders" className="inline-flex min-h-11 items-center text-[15px] font-semibold hover:underline">
             ← My orders
           </Link>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight">
+          <h1 className="text-[40px] font-extrabold leading-none sm:text-6xl">
             Order <span className="font-mono">{order.orderNumber}</span>
           </h1>
         </div>
       )}
 
-      <Card className="space-y-6 p-6">
-        <dl className="grid gap-4 text-sm sm:grid-cols-3">
+      <StatusTrack status={order.status} fulfillment={order.fulfillmentType} />
+
+      <Card className="space-y-7 p-7">
+        {/* Status is shown by the StatusTrack above. */}
+        <dl className="grid gap-5 text-[15px] sm:grid-cols-2">
           <div>
-            <dt className="text-muted-foreground">Placed</dt>
-            <dd className="font-medium">{formatPlacedAt(order.createdAt)}</dd>
+            <dt className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">Placed</dt>
+            <dd className="mt-1 font-semibold">{formatPlacedAt(order.createdAt)}</dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Status</dt>
-            <dd className="mt-1">
-              <StatusBadge status={order.status} />
-            </dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Payment</dt>
-            <dd className="font-medium">
+            <dt className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">Payment</dt>
+            <dd className="mt-1 font-semibold">
               {order.paymentStatus === 'PAID' ? 'Paid' : `Pay when you ${order.fulfillmentType === 'PICKUP' ? 'collect' : 'receive'} it`}
             </dd>
           </div>
         </dl>
 
-        <section aria-labelledby="fulfillment-heading" className="border-t pt-4">
-          <h2 id="fulfillment-heading" className="mb-2 text-lg font-semibold">
+        <section aria-labelledby="fulfillment-heading" className="border-t pt-6">
+          <h2 id="fulfillment-heading" className="mb-2 text-2xl font-bold">
             {order.fulfillmentType === 'PICKUP' ? 'Pickup' : 'Delivery'}
           </h2>
           <Fulfillment order={order} />
         </section>
 
-        <section aria-labelledby="items-heading" className="border-t pt-4">
-          <h2 id="items-heading" className="mb-2 text-lg font-semibold">
+        <section aria-labelledby="items-heading" className="border-t pt-6">
+          <h2 id="items-heading" className="mb-3 text-2xl font-bold">
             Items
           </h2>
-          <ul className="space-y-2 text-sm">
+          <ul className="space-y-2.5 text-[15px]">
             {order.items.map((item) => (
               <li key={item.productId} className="flex justify-between gap-4">
                 <span>
@@ -222,11 +227,11 @@ export function OrderConfirmation({ orderId, variant = 'confirmation' }: OrderCo
                     × {item.quantity} ({formatCedis(item.priceAtPurchaseCents)} {item.unit})
                   </span>
                 </span>
-                <span className="whitespace-nowrap">{formatCedis(item.lineTotalCents)}</span>
+                <span className="whitespace-nowrap font-semibold">{formatCedis(item.lineTotalCents)}</span>
               </li>
             ))}
           </ul>
-          <dl className="mt-4 space-y-2 border-t pt-3 text-sm">
+          <dl className="mt-5 space-y-2.5 border-t pt-4 text-[15px]">
             <div className="flex justify-between">
               <dt>Subtotal</dt>
               <dd>{formatCedis(order.itemsSubtotalCents)}</dd>
@@ -235,9 +240,9 @@ export function OrderConfirmation({ orderId, variant = 'confirmation' }: OrderCo
               <dt>{order.fulfillmentType === 'PICKUP' ? 'Pickup' : 'Delivery'}</dt>
               <dd>{order.deliveryFeeCents === 0 ? 'Free' : formatCedis(order.deliveryFeeCents)}</dd>
             </div>
-            <div className="flex justify-between border-t pt-2 text-base font-semibold">
-              <dt>Total</dt>
-              <dd>{formatCedis(order.finalTotalCents)}</dd>
+            <div className="flex items-baseline justify-between border-t pt-3">
+              <dt className="font-bold">Total</dt>
+              <dd className="font-display text-3xl font-extrabold tracking-tight">{formatCedis(order.finalTotalCents)}</dd>
             </div>
           </dl>
         </section>
@@ -255,11 +260,11 @@ export function OrderConfirmation({ orderId, variant = 'confirmation' }: OrderCo
 
       <div className="flex flex-wrap justify-center gap-3">
         {variant === 'confirmation' && (
-          <Link href="/orders" className={buttonVariants({ variant: 'outline' })}>
+          <Link href="/orders" className={buttonVariants({ size: 'lg' })}>
             View my orders
           </Link>
         )}
-        <Link href="/products" className={buttonVariants({ variant: 'outline' })}>
+        <Link href="/products" className={buttonVariants({ variant: 'outline', size: 'lg' })}>
           Continue shopping
         </Link>
       </div>

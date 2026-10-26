@@ -2,16 +2,30 @@ import { regionName, type FarmerSummary } from '@cheap-market/shared-types';
 
 import { Stars } from '@/components/ratings/Stars';
 
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .map((part) => part.charAt(0))
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 export function FarmerInfo({ farmer }: { farmer: FarmerSummary }) {
   const count = farmer.ratingCount ?? 0;
   const rated = count > 0 && farmer.averageRating !== null;
 
   return (
-    <div className="rounded-lg border bg-background p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Sold by</p>
-      <p className="mt-1 font-semibold">{farmer.fullName}</p>
-      <p className="text-sm text-muted-foreground">{regionName(farmer.region)} region</p>
-      <div className="mt-2 flex items-center gap-2 text-sm">
+    <div className="flex flex-wrap items-center gap-4 rounded-3xl border bg-card p-5">
+      <span aria-hidden="true" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-muted text-lg font-bold">
+        {initials(farmer.fullName)}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[13px] text-muted-foreground">Sold by</p>
+        <p className="text-[17px] font-bold">{farmer.fullName}</p>
+        <p className="text-sm text-muted-foreground">{regionName(farmer.region)} region</p>
+      </div>
+      <div className="flex items-center gap-2 text-sm">
         {rated ? (
           <>
             <Stars rating={farmer.averageRating!} />
