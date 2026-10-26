@@ -7,22 +7,38 @@ import { CatalogView, type CatalogFilters } from '@/components/catalog/CatalogVi
 import { PublicLayout, type PublicSession } from '@/components/PublicLayout';
 import { ACCESS_TOKEN_COOKIE, verifyAccessToken } from '@/lib/auth';
 import { REGION_COOKIE, parseRegion, saveRegion, serializeRegionCookie } from '@/lib/region';
+import { CATALOG_SORTS, type CatalogSort } from '@/lib/catalog';
 
 interface CatalogPageProps {
   initialRegion: RegionCode | null;
   session: PublicSession | null;
 }
 
-/** ?category=<id>&page=<n> (1-based) ⇄ filters (0-based page). */
-function filtersFromQuery(query: Record<string, string | string[] | undefined>): CatalogFilters {
-  const category = typeof query.category === 'string' && query.category ? query.category : undefined;
-  const page = Number(query.page);
-  return { categoryId: category, page: Number.isInteger(page) && page >= 1 ? page - 1 : 0 };
+function text(value: string | string[] | undefined): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
 
-function hrefFor({ categoryId, page }: CatalogFilters): string {
+/** ?category=<id>&q=<text>&min=<cedis>&max=<cedis>&sort=<order>&page=<n> (1-based) ⇄ filters (0-based page). */
+function filtersFromQuery(query: Record<string, string | string[] | undefined>): CatalogFilters {
+  const page = Number(query.page);
+  const sort = text(query.sort);
+  return {
+    categoryId: text(query.category),
+    search: text(query.q),
+    minPrice: text(query.min),
+    maxPrice: text(query.max),
+    sort: (CATALOG_SORTS as readonly string[]).includes(sort ?? '') ? (sort as CatalogSort) : undefined,
+    page: Number.isInteger(page) && page >= 1 ? page - 1 : 0,
+  };
+}
+
+function hrefFor({ categoryId, search, minPrice, maxPrice, sort, page }: CatalogFilters): string {
   const params = new URLSearchParams();
+  if (search) params.set('q', search);
   if (categoryId) params.set('category', categoryId);
+  if (minPrice) params.set('min', minPrice);
+  if (maxPrice) params.set('max', maxPrice);
+  if (sort && sort !== 'newest') params.set('sort', sort);
   if (page > 0) params.set('page', String(page + 1));
   const query = params.toString();
   return query ? `/products?${query}` : '/products';
@@ -37,9 +53,9 @@ export default function CatalogPage({ initialRegion, session }: CatalogPageProps
     (next: RegionCode) => {
       saveRegion(next);
       setRegion(next);
-      router.replace(hrefFor({ categoryId: filters.categoryId, page: 0 }), undefined, { shallow: true });
+      router.replace(hrefFor({ ...filters, page: 0 }), undefined, { shallow: true });
     },
-    [router, filters.categoryId],
+    [router, filters],
   );
 
   const handleFiltersChange = useCallback(

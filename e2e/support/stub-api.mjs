@@ -53,20 +53,43 @@ const PIXEL_PNG = Buffer.from(
 const REGIONS = ['AHAFO', 'ASHANTI', 'BONO', 'BONO_EAST', 'CENTRAL', 'EASTERN', 'GREATER_ACCRA', 'NORTH_EAST',
   'NORTHERN', 'OTI', 'SAVANNAH', 'UPPER_EAST', 'UPPER_WEST', 'VOLTA', 'WESTERN', 'WESTERN_NORTH'];
 
-/** Public catalog: active listings whose farmer is in the region, newest first, 20 per page. */
+const CATALOG_SORTS = ['newest', 'price_asc', 'price_desc', 'top_rated'];
+
+/**
+ * Public catalog: active listings whose farmer is in the region, 20 per page, optionally searched
+ * (?q= produce or farmer name), priced (?minPrice=/?maxPrice= in cedis) and sorted (?sort=).
+ */
 function listCatalog(url, res) {
   const region = url.searchParams.get('region');
   if (!REGIONS.includes(region)) {
     return send(res, 400, { message: "Validation failed: region: Region must be one of Ghana's regions" });
   }
   const categoryId = url.searchParams.get('categoryId');
+  const search = (url.searchParams.get('q') ?? '').trim().toLowerCase();
+  const minPrice = url.searchParams.has('minPrice') ? Number(url.searchParams.get('minPrice')) * 100 : null;
+  const maxPrice = url.searchParams.has('maxPrice') ? Number(url.searchParams.get('maxPrice')) * 100 : null;
+  const sort = url.searchParams.get('sort') ?? 'newest';
+  if (!CATALOG_SORTS.includes(sort)) {
+    return send(res, 400, { message: `Validation failed: sort: must be one of ${CATALOG_SORTS.join(', ')}` });
+  }
+  if (minPrice !== null && maxPrice !== null && minPrice > maxPrice) {
+    return send(res, 400, { message: 'minPrice: must not be more than maxPrice' });
+  }
   const page = Number(url.searchParams.get('page') ?? 0);
   const size = Number(url.searchParams.get('size') ?? 20);
+  const farmerOf = (p) => farmers.find((f) => f.id === p.farmerId);
+  // Newest first; Array.prototype.sort is stable, so this stays the tie-break for the other orders.
   const matching = products
     .filter((p) => p.listingStatus === 'ACTIVE')
-    .filter((p) => farmers.find((f) => f.id === p.farmerId)?.region === region)
+    .filter((p) => farmerOf(p)?.region === region)
     .filter((p) => !categoryId || p.categoryId === categoryId)
+    .filter((p) => !search || p.name.toLowerCase().includes(search) || farmerOf(p).fullName.toLowerCase().includes(search))
+    .filter((p) => minPrice === null || p.priceCents >= minPrice)
+    .filter((p) => maxPrice === null || p.priceCents <= maxPrice)
     .reverse();
+  if (sort === 'price_asc') matching.sort((a, b) => a.priceCents - b.priceCents);
+  if (sort === 'price_desc') matching.sort((a, b) => b.priceCents - a.priceCents);
+  if (sort === 'top_rated') matching.sort((a, b) => (farmerOf(b).averageRating ?? -1) - (farmerOf(a).averageRating ?? -1));
   const content = matching.slice(page * size, (page + 1) * size).map((p) => ({
     id: p.id,
     name: p.name,

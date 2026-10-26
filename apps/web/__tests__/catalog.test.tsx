@@ -189,4 +189,82 @@ describe('CatalogView', () => {
 
     await waitFor(() => expect(onFiltersChange).toHaveBeenCalledWith({ page: 1 }));
   });
+  it('searches, resetting to the first page and keeping the other filters', async () => {
+    mockedList.mockResolvedValue(page([card(1)]));
+    const { onFiltersChange, user } = renderView('VOLTA', { categoryId: 'c-fruit', sort: 'price_asc', page: 0 });
+    await screen.findByRole('region', { name: 'Produce' });
+
+    await user.type(screen.getByRole('searchbox', { name: 'Search produce or farmers' }), '  okro ');
+    await user.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(onFiltersChange).toHaveBeenCalledWith({ categoryId: 'c-fruit', sort: 'price_asc', search: 'okro', page: 0 });
+  });
+
+  it('applies a price range and rejects one where the minimum is higher', async () => {
+    mockedList.mockResolvedValue(page([card(1)]));
+    const { onFiltersChange, user } = renderView('VOLTA');
+    await screen.findByRole('region', { name: 'Produce' });
+
+    await user.type(screen.getByLabelText('Min'), '20');
+    await user.type(screen.getByLabelText('Max'), '10');
+    await user.click(screen.getByRole('button', { name: 'Apply price' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('The minimum price can’t be more than the maximum.');
+    expect(onFiltersChange).not.toHaveBeenCalled();
+
+    await user.clear(screen.getByLabelText('Max'));
+    await user.type(screen.getByLabelText('Max'), '25.50');
+    await user.click(screen.getByRole('button', { name: 'Apply price' }));
+    expect(onFiltersChange).toHaveBeenCalledWith({ minPrice: '20', maxPrice: '25.50', page: 0 });
+  });
+
+  it('sorts, and requests the narrowed and sorted page', async () => {
+    mockedList.mockResolvedValue(page([card(1)]));
+    const { onFiltersChange, user } = renderView('VOLTA', { search: 'yam', minPrice: '5', sort: 'price_asc', page: 0 });
+    await screen.findByRole('region', { name: 'Produce' });
+
+    expect(mockedList).toHaveBeenCalledWith(
+      expect.objectContaining({ region: 'VOLTA', search: 'yam', minPrice: '5', sort: 'price_asc', page: 0 }),
+    );
+    await user.selectOptions(screen.getByLabelText('Sort by'), 'Top rated farmers');
+    expect(onFiltersChange).toHaveBeenCalledWith({ search: 'yam', minPrice: '5', sort: 'top_rated', page: 0 });
+  });
+
+  it('explains an empty search and clears it, keeping the category', async () => {
+    mockedList.mockResolvedValue(page([]));
+    const { onFiltersChange, user } = renderView('VOLTA', { categoryId: 'c-fruit', search: 'durian', page: 0 });
+
+    expect(await screen.findByRole('heading', { name: 'No produce matches your filters' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Clear search and price' }));
+    expect(onFiltersChange).toHaveBeenCalledWith({ categoryId: 'c-fruit', page: 0 });
+  });
+});
+
+describe('listCatalogProducts', () => {
+  const { listCatalogProducts: realList } = jest.requireActual<typeof import('../services/catalogService')>(
+    '../services/catalogService',
+  );
+  const originalFetch = global.fetch;
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it('sends search, price and a non-default sort to the API', async () => {
+    const fetchMock = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: page([]) }) });
+    global.fetch = fetchMock;
+
+    await realList({ region: 'VOLTA', search: 'okro', minPrice: '5', maxPrice: '10.50', sort: 'price_desc', page: 1 });
+    await realList({ region: 'VOLTA', sort: 'newest' });
+
+    const params = (call: number) => new URL(fetchMock.mock.calls[call][0], 'http://localhost').searchParams;
+    expect(Object.fromEntries(params(0))).toEqual({
+      region: 'VOLTA',
+      page: '1',
+      size: '20',
+      q: 'okro',
+      minPrice: '5',
+      maxPrice: '10.50',
+      sort: 'price_desc',
+    });
+    expect(params(1).has('sort')).toBe(false);
+  });
 });

@@ -53,6 +53,20 @@ export function SiteHeader({ session, signOutTo = '/' }: SiteHeaderProps) {
         })}
       </nav>
       <div className="ml-auto flex items-center gap-3">
+        {/* A plain GET form: works before hydration and lands on /products?q=…. */}
+        <form role="search" action="/products" method="get" className="hidden lg:block">
+          <label htmlFor="site-search" className="sr-only">
+            Search the shop
+          </label>
+          <input
+            id="site-search"
+            name="q"
+            type="search"
+            maxLength={100}
+            placeholder="Search tomatoes, yam, plantain…"
+            className="h-12 w-72 rounded-full border bg-card px-5 text-[15px] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+        </form>
         {session ? (
           <>
             {isBuyer && <CartLink />}
