@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { NotificationsPanel } from '@/components/admin/NotificationsPanel';
+import { StatTiles } from '@/components/admin/StatTiles';
 import { buttonVariants } from '@/components/ui/button';
 import { requireAdminSession, type SessionPageProps } from '@/lib/pageSession';
 import { cn } from '@/lib/utils';
@@ -50,7 +51,11 @@ export default function AdminDashboard({ email: adminEmail }: SessionPageProps) 
         </p>
       </div>
 
-      <div className="mt-8 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,380px)]">
+      <div className="mt-8">
+        <StatTiles />
+      </div>
+
+      <div className="mt-6 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,380px)]">
         <NotificationsPanel />
 
         <section aria-labelledby="manage-heading" className="space-y-4">

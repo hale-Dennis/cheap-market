@@ -674,6 +674,22 @@ createServer(async (req, res) => {
     pickupLocations.push(location);
     return send(res, 201, { message: 'Pickup location created successfully.', data: location });
   }
+  // Mirrors the real API's StatsService.
+  const liveListings = () =>
+    products.filter((p) => p.listingStatus === 'ACTIVE' && farmers.find((f) => f.id === p.farmerId)?.accountStatus !== 'SUSPENDED');
+  if (req.method === 'GET' && url.pathname === '/api/v1/stats') {
+    const regions = new Set(liveListings().map((p) => farmers.find((f) => f.id === p.farmerId).region));
+    return send(res, 200, { message: 'Stats retrieved successfully.', data: {
+      farmers: farmers.filter((f) => f.accountStatus !== 'SUSPENDED').length, regions: regions.size } });
+  }
+  if (req.method === 'GET' && url.pathname === '/api/v1/admin/stats') {
+    if ((await sessionFromRequest(req))?.role !== 'ADMIN') return send(res, 403, { message: 'Forbidden' });
+    return send(res, 200, { message: 'Stats retrieved successfully.', data: {
+      farmers: farmers.length,
+      liveListings: liveListings().length,
+      ordersInProgress: orders.filter((o) => STATUS_GROUPS.active.includes(o.status)).length,
+      openDisputes: disputes.filter((d) => d.status !== 'RESOLVED').length } });
+  }
   if (req.method === 'GET' && url.pathname === '/api/v1/categories') {
     const sorted = [...categories].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
     return send(res, 200, { message: 'Categories retrieved successfully.', data: sorted });

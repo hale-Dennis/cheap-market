@@ -58,4 +58,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     /** An order with everything the confirmation page shows, in one query. */
     @EntityGraph(attributePaths = {"buyer", "items", "items.product", "items.product.farmer", "pickupLocation"})
     Optional<Order> findWithDetailsById(UUID id);
+
+    long countByStatusIn(Collection<OrderStatus> statuses);
 }

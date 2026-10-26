@@ -3,6 +3,7 @@ package com.ftb.api.repository;
 import java.util.UUID;
 import java.util.Optional;
 import com.ftb.api.model.User;
+import com.ftb.api.model.AccountStatus;
 import com.ftb.api.model.UserRole;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
@@ -60,4 +61,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from User u where u.id = :id")
     Optional<User> lockById(UUID id);
+
+    long countByRoleAndAccountStatus(UserRole role, AccountStatus accountStatus);
+
+    long countByRole(UserRole role);
 }

@@ -5,6 +5,7 @@ import { PRODUCE_TINTS, ProduceArt, type ProduceShape } from '@/components/brand
 import { ProductCard } from '@/components/catalog/ProductCard';
 import { buttonVariants } from '@/components/ui/button';
 import { useCatalogProducts, usePublicCategories } from '@/hooks/useCatalog';
+import { usePublicStats } from '@/hooks/useStats';
 import { cn } from '@/lib/utils';
 
 const SHAPES: ProduceShape[] = ['round', 'oval', 'long', 'oval', 'round', 'oval'];
@@ -23,6 +24,26 @@ function SectionHeading({ title, subtitle, link }: { title: string; subtitle?: s
         </Link>
       )}
     </div>
+  );
+}
+
+/** Farmers selling and regions covered, once there's something worth showing. */
+function HeroStats() {
+  const { data } = usePublicStats();
+  if (!data || data.farmers === 0) return null;
+  const items = [
+    { value: data.farmers, label: data.farmers === 1 ? 'Farmer selling' : 'Farmers selling' },
+    ...(data.regions > 0 ? [{ value: data.regions, label: data.regions === 1 ? 'Region covered' : 'Regions covered' }] : []),
+  ];
+  return (
+    <dl className="flex flex-wrap gap-8 pt-2">
+      {items.map((item) => (
+        <div key={item.label} className="flex flex-col-reverse gap-0.5">
+          <dt className="text-sm text-background/75">{item.label}</dt>
+          <dd className="font-display text-3xl font-bold">{item.value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -56,6 +77,7 @@ export function Hero() {
             Create an account
           </Link>
         </div>
+        <HeroStats />
       </div>
       <div aria-hidden="true" className="mx-auto grid w-full min-w-0 max-w-[520px] flex-[1_1_380px] grid-cols-2 gap-4">
         {SHAPES.slice(0, 4).map((shape, index) => (
