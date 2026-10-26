@@ -16,7 +16,12 @@ async function addCategory(page: Page, name: string) {
   await expect(dialog).toBeHidden();
 }
 
-const row = (page: Page, name: string) => page.getByRole('row', { name: new RegExp(`^${name}\\b`) });
+// Each category is a card in the "Produce categories" list, headed by its name.
+const row = (page: Page, name: string) =>
+  page
+    .getByRole('list', { name: /^Produce categories/ })
+    .getByRole('listitem')
+    .filter({ has: page.getByRole('heading', { name, exact: true }) });
 
 test.describe('Category management', () => {
   test('admin opens Categories from the dashboard and adds, renames and deletes a category', async ({

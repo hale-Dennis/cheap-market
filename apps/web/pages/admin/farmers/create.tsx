@@ -23,20 +23,17 @@ export default function CreateFarmerPage({ email: adminEmail }: SessionPageProps
 
   return (
     <AdminLayout title="Create farmer" adminEmail={adminEmail}>
-      <Link
-        href="/admin/farmers"
-        className="text-sm text-muted-foreground hover:text-foreground"
-      >
+      <Link href="/admin/farmers" className="inline-flex min-h-11 items-center text-[15px] font-semibold hover:underline">
         ← Back to farmers
       </Link>
-      <Card className="mt-4 max-w-xl">
-        <CardHeader>
-          <h1 className="text-2xl font-bold tracking-tight">Create farmer</h1>
-          <CardDescription>
+      <Card className="mt-3 max-w-2xl border-2 border-primary">
+        <CardHeader className="p-7 pb-2">
+          <h1 className="text-[34px] font-extrabold leading-tight sm:text-[40px]">Create farmer</h1>
+          <CardDescription className="text-base">
             Register a farmer so you can list produce on their behalf.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-7 pt-4">
           <CreateFarmerForm onCreated={handleCreated} />
         </CardContent>
       </Card>

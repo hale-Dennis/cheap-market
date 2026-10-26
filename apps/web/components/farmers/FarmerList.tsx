@@ -30,7 +30,7 @@ export function FarmerList({ page, hrefForPage, onPageOutOfRange }: FarmerListPr
   if (error && !data) {
     return (
       <Card className="p-6">
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-[15px] font-semibold text-destructive">
           {error instanceof ApiError ? error.message : 'Could not load farmers.'}
         </p>
       </Card>
@@ -40,16 +40,16 @@ export function FarmerList({ page, hrefForPage, onPageOutOfRange }: FarmerListPr
   if (isLoading || !data || outOfRange) {
     return (
       <Card className="p-6">
-        <p className="text-sm text-muted-foreground">Loading farmers…</p>
+        <p className="text-[15px] text-muted-foreground">Loading farmers…</p>
       </Card>
     );
   }
 
   if (data.totalElements === 0) {
     return (
-      <Card className="flex flex-col items-center gap-3 px-6 py-12 text-center">
-        <h2 className="text-lg font-semibold">No farmers yet</h2>
-        <p className="max-w-sm text-sm text-muted-foreground">
+      <Card className="flex flex-col items-center gap-3 border-dashed px-6 py-14 text-center">
+        <h2 className="text-[28px] font-extrabold">No farmers yet</h2>
+        <p className="max-w-sm text-[15px] text-muted-foreground">
           Register the first farmer so you can start listing their produce.
         </p>
         <Link href="/admin/farmers/create" className={buttonVariants()}>
@@ -60,7 +60,7 @@ export function FarmerList({ page, hrefForPage, onPageOutOfRange }: FarmerListPr
   }
 
   return (
-    <Card className="overflow-hidden" aria-busy={isValidating}>
+    <Card className="overflow-hidden p-2" aria-busy={isValidating}>
       <FarmersTable
         farmers={data.content}
         caption={`Registered farmers, page ${data.currentPage + 1} of ${data.totalPages}`}
